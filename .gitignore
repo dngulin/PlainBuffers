@@ -1,0 +1,5 @@
+.idea
+*.DotSettings.user
+
+PlainBuffers/bin
+PlainBuffers/obj
