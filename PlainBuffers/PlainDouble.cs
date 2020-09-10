@@ -4,18 +4,13 @@ using System.Buffers.Binary;
 namespace PlainBuffers {
   public readonly ref struct PlainDouble {
     public const int Size = sizeof(double);
-
     public readonly Span<byte> Buffer;
-    private readonly double _defaultValue;
 
-    public PlainDouble(byte[] buffer, double defaultValue) : this(new Span<byte>(buffer), defaultValue) {}
-
-    public PlainDouble(Span<byte> buffer, double defaultValue) {
+    public PlainDouble(Span<byte> buffer) {
       if (buffer.Length != Size)
         throw new InvalidOperationException();
 
       Buffer = buffer;
-      _defaultValue = defaultValue;
     }
 
     public unsafe double Read() {
@@ -23,9 +18,7 @@ namespace PlainBuffers {
       return *(double*) &value;
     }
 
-    public void WriteDefault() => Write(_defaultValue);
     public unsafe void Write(double value) => BinaryPrimitives.WriteUInt64BigEndian(Buffer, *(uint*) &value);
-
     public void Write(PlainDouble value) => value.Buffer.CopyTo(Buffer);
 
     public static bool operator ==(PlainDouble l, PlainDouble r) => l.Buffer == r.Buffer;
