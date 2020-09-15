@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 
-namespace PlainBuffers {
+namespace PlainBuffers.BuiltIn {
   public readonly ref struct PlainUInt64 {
     public const int Size = sizeof(ulong);
 
@@ -16,9 +16,9 @@ namespace PlainBuffers {
     }
 
     public ulong Read() => BinaryPrimitives.ReadUInt64BigEndian(_Buffer);
-
     public void Write(ulong value) => BinaryPrimitives.WriteUInt64BigEndian(_Buffer, value);
-    public void Write(PlainUInt64 value) => value._Buffer.CopyTo(_Buffer);
+
+    public void CopyTo(PlainUInt64 other) => _Buffer.CopyTo(other._Buffer);
 
     public static bool operator ==(PlainUInt64 l, PlainUInt64 r) => l._Buffer == r._Buffer;
     public static bool operator !=(PlainUInt64 l, PlainUInt64 r) => l._Buffer != r._Buffer;

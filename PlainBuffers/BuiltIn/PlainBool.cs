@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PlainBuffers {
+namespace PlainBuffers.BuiltIn {
   public readonly ref struct PlainBool {
     public const int Size = sizeof(byte);
 
@@ -15,9 +15,9 @@ namespace PlainBuffers {
     }
 
     public unsafe bool Read() => *(bool*) _Buffer[0];
-
     public unsafe void Write(bool value) => _Buffer[0] = *(byte*) &value;
-    public void Write(PlainBool value) => value._Buffer.CopyTo(_Buffer);
+    
+    public void CopyTo(PlainBool other) => _Buffer.CopyTo(other._Buffer);
 
     public static bool operator ==(PlainBool l, PlainBool r) => l._Buffer == r._Buffer;
     public static bool operator !=(PlainBool l, PlainBool r) => l._Buffer != r._Buffer;

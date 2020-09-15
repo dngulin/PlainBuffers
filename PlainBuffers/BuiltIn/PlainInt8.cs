@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PlainBuffers {
+namespace PlainBuffers.BuiltIn {
   public readonly ref struct PlainInt8 {
     public const int Size = sizeof(sbyte);
 
@@ -15,10 +15,9 @@ namespace PlainBuffers {
     }
 
     public sbyte Read() => unchecked((sbyte) _Buffer[0]);
-
-
     public void Write(sbyte value) => _Buffer[0] = (byte) value;
-    public void Write(PlainInt8 value) => value._Buffer.CopyTo(_Buffer);
+
+    public void CopyTo(PlainInt8 other) => _Buffer.CopyTo(other._Buffer);
 
     public static bool operator ==(PlainInt8 l, PlainInt8 r) => l._Buffer == r._Buffer;
     public static bool operator !=(PlainInt8 l, PlainInt8 r) => l._Buffer != r._Buffer;

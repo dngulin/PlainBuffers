@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 
-namespace PlainBuffers {
+namespace PlainBuffers.BuiltIn {
   public readonly ref struct PlainUInt16 {
     public const int Size = sizeof(ushort);
 
@@ -16,9 +16,9 @@ namespace PlainBuffers {
     }
 
     public ushort Read() => BinaryPrimitives.ReadUInt16BigEndian(_Buffer);
-
     public void Write(ushort value) => BinaryPrimitives.WriteUInt16BigEndian(_Buffer, value);
-    public void Write(PlainUInt16 value) => value._Buffer.CopyTo(_Buffer);
+
+    public void CopyTo(PlainUInt16 other) => _Buffer.CopyTo(other._Buffer);
 
     public static bool operator ==(PlainUInt16 l, PlainUInt16 r) => l._Buffer == r._Buffer;
     public static bool operator !=(PlainUInt16 l, PlainUInt16 r) => l._Buffer != r._Buffer;
