@@ -43,7 +43,7 @@ namespace PlainBuffers.CompilerCore.Generate {
       writer.WriteLine();
 
       writer.WriteLine("using System;");
-      writer.WriteLine("using PlainBuffers.BuiltIn;");
+      writer.WriteLine("using PlainBuffers.Core;");
       writer.WriteLine();
 
       var typeSizes = schema.Types.ToDictionary(t => t.Name, t => t.Size);
