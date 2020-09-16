@@ -3,8 +3,27 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace PlainBuffers.CompilerCore.Parse {
-  public class ParsingHelper {
+  public static class ParsingHelper {
     private const string NameRegex = @"^[A-Za-z_][A-Za-z0-9_]*$";
+
+    public static bool IsPrimitive(string typeName) {
+      switch (typeName) {
+        case "sbyte":
+        case "byte":
+        case "bool":
+        case "short":
+        case "ushort":
+        case "int":
+        case "uint":
+        case "float":
+        case "long":
+        case "ulong":
+        case "double":
+          return true;
+      }
+
+      return false;
+    }
 
     public static bool IsInteger(string typeName) {
       switch (typeName) {

@@ -81,17 +81,14 @@ namespace PlainBuffers.CompilerCore.Parse {
       if (arrayXml.Length <= 0)
         throw new Exception($"Array type `{arrayXml.Name}` has invalid length {arrayXml.Length}");
 
-      // TODO: Handle primitive types, replace type name
-
-      if (!index.TryGetValue(arrayXml.ItemTypeName, out var itemTypeInfo))
+      var itemSizeInfo =
+        GetTypeSizeInfo(arrayXml.ItemTypeName, index) ??
         throw new Exception($"Unknown item type `{arrayXml.ItemTypeName}` used in array type `{arrayXml.Name}`");
 
       // TODO: validate default value (useful only with primitive type and enum)
 
-      var size = itemTypeInfo.Size * arrayXml.Length;
-
       return new ArrayTypeInfo(
-        arrayXml.Name, size, itemTypeInfo.Alignment,
+        arrayXml.Name, itemSizeInfo.Size * arrayXml.Length, itemSizeInfo.Alignment,
         arrayXml.ItemTypeName, arrayXml.Length, arrayXml.ItemDefaultValue);
     }
 
@@ -116,14 +113,13 @@ namespace PlainBuffers.CompilerCore.Parse {
 
         knownFieldNames.Add(fieldXml.Name);
 
-        // TODO: Handle primitive field type
-
-        if (!index.TryGetValue(fieldXml.Type, out var fieldTypeInfo))
+        var fieldSizeInfo =
+          GetTypeSizeInfo(fieldXml.Type, index) ??
           throw new Exception($"Type `{structXml.Name}` has field `{fieldXml.Name}` of unknown type `{fieldXml.Type}`");
 
-        unalignedSize += fieldTypeInfo.Size;
-        if (fieldTypeInfo.Alignment >= alignment)
-          alignment = fieldTypeInfo.Alignment;
+        unalignedSize += fieldSizeInfo.Size;
+        if (fieldSizeInfo.Alignment >= alignment)
+          alignment = fieldSizeInfo.Alignment;
 
         // TODO: validate default value
 
@@ -131,15 +127,39 @@ namespace PlainBuffers.CompilerCore.Parse {
       }
 
       Array.Sort(fields, (a, b) => {
-        var alignmentA = index[a.Type].Alignment;
-        var alignmentB = index[b.Type].Alignment;
+        var alignmentA = GetTypeSizeInfo(a.Type, index)?.Alignment ?? 0;
+        var alignmentB = GetTypeSizeInfo(b.Type, index)?.Alignment ?? 0;
         if (alignmentA != alignmentB)
           return alignmentB.CompareTo(alignmentA);
 
-        return string.Compare(a.Name, b.Name, StringComparison.Ordinal);
+        var orderA = Array.FindIndex(structXml.Fields, f => f.Name == a.Name);
+        var orderB = Array.FindIndex(structXml.Fields, f => f.Name == b.Name);
+        return orderA.CompareTo(orderB);
       });
 
       return new StructTypeInfo(structXml.Name, unalignedSize, alignment, fields);
+    }
+
+    private static TypeSizeInfo? GetTypeSizeInfo(string type, IReadOnlyDictionary<string, BaseTypeInfo> index) {
+      if (ParsingHelper.IsPrimitive(type)) {
+        var size = ParsingHelper.GetPrimitiveTypeSize(type);
+        return new TypeSizeInfo(size, size);
+      }
+
+      if (index.TryGetValue(type, out var typeXml))
+        return new TypeSizeInfo(typeXml.Size, typeXml.Alignment);
+
+      return null;
+    }
+
+    private readonly struct TypeSizeInfo {
+      public readonly int Size;
+      public readonly int Alignment;
+
+      public TypeSizeInfo(int size, int alignment) {
+        Size = size;
+        Alignment = alignment;
+      }
     }
   }
 }
