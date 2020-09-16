@@ -82,33 +82,20 @@ namespace PlainBuffers.CompilerCore.Generate {
         using (var ifBlock = ctorBlock.Sub("if (buffer.Length != Size)")) {
           ifBlock.WriteLine("throw new InvalidOperationException();"); // TODO: message
         }
-
-        ctorBlock.WriteLine();
         ctorBlock.WriteLine("_Buffer = buffer;");
       }
     }
 
     private static void WriteCopyToMethod(string type, BlockWriter typeBlock) {
-      using (var wrBlock = typeBlock.Sub($"public void CopyTo({type} other)")) {
-        wrBlock.WriteLine("_Buffer.CopyTo(other._Buffer);");
-      }
+      typeBlock.WriteLine($"public void CopyTo({type} other) => _Buffer.CopyTo(other._Buffer);");
     }
 
     private static void WriteEqualityOperators(string type, BlockWriter typeBlock) {
-      using (var opBlock = typeBlock.Sub($"public static bool operator ==({type} l, {type} r)")) {
-        opBlock.WriteLine("return l._Buffer == r._Buffer;");
-      }
-      using (var opBlock = typeBlock.Sub($"public static bool operator !=({type} l, {type} r)")) {
-        opBlock.WriteLine("return l._Buffer != r._Buffer;");
-      }
-
+      typeBlock.WriteLine($"public static bool operator ==({type} l, {type} r) => l._Buffer == r._Buffer;");
+      typeBlock.WriteLine($"public static bool operator !=({type} l, {type} r) => l._Buffer != r._Buffer;");
       typeBlock.WriteLine();
-      using (var eqBlock = typeBlock.Sub("public override bool Equals(object obj)")) {
-        eqBlock.WriteLine("return false;");
-      }
-      using (var hcBlock = typeBlock.Sub("public override bool Equals(object obj)")) {
-        hcBlock.WriteLine("throw new NotSupportedException();");
-      }
+      typeBlock.WriteLine("public override bool Equals(object obj) => false;");
+      typeBlock.WriteLine("public override int GetHashCode() => throw new NotSupportedException();");
     }
 
     private static void WriteEnum(EnumTypeInfo typeInfo, BlockWriter nsBlock) {
@@ -130,7 +117,7 @@ namespace PlainBuffers.CompilerCore.Generate {
     private static void WriteArray(ArrayTypeInfo typeInfo, BlockWriter nsBlock) {
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {typeInfo.Name}")) {
         typeBlock.WriteLine($"public const int Size = {typeInfo.Size};");
-        typeBlock.WriteLine($"public const int Lenght = {typeInfo.Length};");
+        typeBlock.WriteLine($"public const int Length = {typeInfo.Length};");
 
         typeBlock.WriteLine();
         WriteConstructor(typeInfo.Name, typeBlock);
@@ -148,16 +135,12 @@ namespace PlainBuffers.CompilerCore.Generate {
           using (var ifBlock = getBlock.Sub("if (index < 0 || index >= Length)")) {
             ifBlock.WriteLine("throw new IndexOutOfRangeException();"); // TODO: message
           }
-
-          getBlock.WriteLine();
-          getBlock.WriteLine($"var offset = {itemType}.Size * index;");
-          getBlock.WriteLine($"var slice = _Buffer.Slice(offset, {itemType}.Size);");
-          getBlock.WriteLine($"return new {itemType}(slice);");
+          getBlock.WriteLine($"return new {itemType}(_Buffer.Slice({itemType}.Size * index, {itemType}.Size));");
         }
 
         // WriteDefault
-        typeBlock.WriteLine();
         if (!string.IsNullOrEmpty(typeInfo.ItemDefaultValue)) {
+          typeBlock.WriteLine();
           using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
           using (var forBlock = wdBlock.Sub("for (var i = 0; i < Length; i++)")) {
             forBlock.WriteLine($"this[i].Write({typeInfo.ItemDefaultValue});"); // TODO: exponential size copy
@@ -173,15 +156,11 @@ namespace PlainBuffers.CompilerCore.Generate {
     }
 
     private static void WriteArrayEnumerator(string arrayType, string itemType, BlockWriter arrayBlock) {
-      using (var getEnumeratorBlock = arrayBlock.Sub("public Enumerator GetEnumerator()")) {
-        getEnumeratorBlock.WriteLine("return new Enumerator(this);");
-      }
+      arrayBlock.WriteLine("public Enumerator GetEnumerator() => new Enumerator(this);");
 
       arrayBlock.WriteLine();
       using (var enumeratorBlock = arrayBlock.Sub("public ref struct Enumerator")) {
         enumeratorBlock.WriteLine($"private readonly {arrayType} _array;");
-
-        enumeratorBlock.WriteLine();
         enumeratorBlock.WriteLine("private int _index;");
 
         enumeratorBlock.WriteLine();
@@ -191,23 +170,12 @@ namespace PlainBuffers.CompilerCore.Generate {
         }
 
         enumeratorBlock.WriteLine();
-        using (var nxtBlock = enumeratorBlock.Sub("public bool MoveNext()")) {
-          nxtBlock.WriteLine($"return (++_index < {arrayType}.Length);");
-        }
+        enumeratorBlock.WriteLine($"public bool MoveNext() => ++_index < {arrayType}.Length;");
+        enumeratorBlock.WriteLine($"public {itemType} Current => _array[_index];");
 
         enumeratorBlock.WriteLine();
-        using (var curBlock = enumeratorBlock.Sub($"public {itemType} Current"))
-        using (var getBlock = curBlock.Sub("get")) {
-          getBlock.WriteLine("return _array[_index];");
-        }
-
-        enumeratorBlock.WriteLine();
-        using (var rstBlock = enumeratorBlock.Sub("public void Reset()")) {
-          rstBlock.WriteLine("_index = -1;");
-        }
-
-        enumeratorBlock.WriteLine();
-        using (enumeratorBlock.Sub("public void Dispose()")) { }
+        enumeratorBlock.WriteLine("public void Reset() => _index = -1;");
+        enumeratorBlock.WriteLine("public void Dispose() {}");
       }
     }
 
@@ -222,26 +190,26 @@ namespace PlainBuffers.CompilerCore.Generate {
           offset += GetTypeSize(fieldInfo.Type, typeSizes);
         }
 
+        if (typeInfo.PaddingSize != 0) {
+          typeBlock.WriteLine($"private const int _PaddingStart = {offset};");
+          typeBlock.WriteLine($"private const int _PaddingSize = {typeInfo.PaddingSize};");
+        }
+
         typeBlock.WriteLine();
         WriteConstructor(typeInfo.Name, typeBlock);
 
-        // Fields
         typeBlock.WriteLine();
         foreach (var fieldInfo in typeInfo.Fields) {
           if (!PrimitiveTypes.TryGetValue(fieldInfo.Type, out var fieldType))
             fieldType = fieldInfo.Type;
 
-          using (var propBlock = typeBlock.Sub($"public {fieldType} Current"))
-          using (var getBlock = propBlock.Sub("get")) {
-            getBlock.WriteLine($"var slice = _Buffer.Slice(_{fieldInfo.Name}Offset, {fieldType}.Size);");
-            getBlock.WriteLine($"return new {fieldType}(slice);");
-          }
+          var slice = $"_Buffer.Slice(_{fieldInfo.Name}Offset, {fieldType}.Size)";
+          typeBlock.WriteLine($"public {fieldType} {fieldInfo.Name} => new {fieldType}({slice});");
         }
 
         typeBlock.WriteLine();
         WriteCopyToMethod(typeInfo.Name, typeBlock);
 
-        // WriteDefault
         typeBlock.WriteLine();
         using (var wdBlock = typeBlock.Sub("public void WriteDefault()")) {
           foreach (var fieldInfo in typeInfo.Fields) {
@@ -251,10 +219,7 @@ namespace PlainBuffers.CompilerCore.Generate {
           }
 
           if (typeInfo.PaddingSize != 0) {
-            wdBlock.WriteLine();
-            wdBlock.WriteLine($"const int paddingOffset = {offset};");
-            wdBlock.WriteLine($"const int paddingSize = {typeInfo.PaddingSize};");
-            wdBlock.WriteLine("_Buffer.Slice(paddingOffset, paddingSize).Fill(0);");
+            wdBlock.WriteLine("_Buffer.Slice(_PaddingStart, _PaddingSize).Fill(0);");
           }
         }
 
