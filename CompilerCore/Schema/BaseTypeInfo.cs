@@ -9,7 +9,10 @@ namespace PlainBuffers.CompilerCore.Schema {
     protected BaseTypeInfo(string name, int unalignedSize, int alignment) {
       Name = name;
       Alignment = alignment;
-      PaddingSize = alignment - unalignedSize % alignment;
+
+      var reminder = unalignedSize % alignment;
+      PaddingSize = reminder == 0 ? 0 : alignment - reminder;
+
       Size = unalignedSize + PaddingSize;
     }
   }
