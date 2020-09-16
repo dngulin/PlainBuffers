@@ -6,11 +6,11 @@ using PlainBuffers.CompilerCore.Parse.Xml;
 using PlainBuffers.CompilerCore.Schema;
 
 namespace PlainBuffers.CompilerCore.Parse {
-  public class XmlParser {
+  public class XmlParser : IParser {
     private readonly XmlSerializer _serializer = new XmlSerializer(typeof(TypesXml));
 
-    public SchemaInfo Parse(Stream fileStream) {
-      var schemaXml = (TypesXml) _serializer.Deserialize(fileStream);
+    public SchemaInfo Parse(Stream readStream) {
+      var schemaXml = (TypesXml) _serializer.Deserialize(readStream);
 
       if (!ParsingHelper.IsDotSeparatedNameValid(schemaXml.NameSpace))
         throw new Exception($"Invalid namespace `{schemaXml.NameSpace}`");

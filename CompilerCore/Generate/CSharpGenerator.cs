@@ -6,7 +6,7 @@ using PlainBuffers.CompilerCore.Schema;
 using PlainBuffers.Core;
 
 namespace PlainBuffers.CompilerCore.Generate {
-  public class CSharpGenerator {
+  public class CSharpGenerator : IGenerator {
     private const string Indent = "    ";
 
     private static readonly Dictionary<string, string> PrimitiveTypes = new Dictionary<string, string> {
