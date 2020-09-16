@@ -119,7 +119,7 @@ namespace PlainBuffers.Generate {
     }
 
     private static void WriteArray(ArrayTypeInfo typeInfo, BlockWriter nsBlock) {
-      using (var typeBlock = nsBlock.Sub($"public ref struct {typeInfo.Name}")) {
+      using (var typeBlock = nsBlock.Sub($"public readonly ref struct {typeInfo.Name}")) {
         typeBlock.WriteLine($"public const int Size = {typeInfo.Size};");
         typeBlock.WriteLine($"public const int Lenght = {typeInfo.Length};");
 
@@ -203,7 +203,7 @@ namespace PlainBuffers.Generate {
     }
 
     private static void WriteStruct(StructTypeInfo typeInfo, BlockWriter nsBlock, IReadOnlyDictionary<string, int> typeSizes) {
-      using (var typeBlock = nsBlock.Sub($"public ref struct {typeInfo.Name}")) {
+      using (var typeBlock = nsBlock.Sub($"public readonly ref struct {typeInfo.Name}")) {
         typeBlock.WriteLine($"public const int Size = {typeInfo.Size};");
 
         typeBlock.WriteLine();
