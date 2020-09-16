@@ -1,18 +1,18 @@
 using System.IO;
 
 namespace PlainBuffers.CompilerCore {
-  public class Compiler {
+  public class CompilerBase {
     private readonly IParser _parser;
     private readonly IGenerator _generator;
 
-    public Compiler(IParser parser, IGenerator generator) {
+    public CompilerBase(IParser parser, IGenerator generator) {
       _parser = parser;
       _generator = generator;
     }
 
     public void Compile(string schemaPath, string generatePath) {
       using (var readStream = File.OpenRead(schemaPath))
-      using (var writeStream = File.OpenWrite(generatePath)) {
+      using (var writeStream = File.Create(generatePath)) {
         Compile(readStream, writeStream);
       }
     }

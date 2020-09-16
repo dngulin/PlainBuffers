@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerCore", "CompilerCore\CompilerCore.csproj", "{86C97A7B-0EC9-496C-B2E1-F827CA4247B5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "Compiler\Compiler.csproj", "{C25E2DB0-32EB-4058-9DB8-646D066AACC4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{86C97A7B-0EC9-496C-B2E1-F827CA4247B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86C97A7B-0EC9-496C-B2E1-F827CA4247B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{86C97A7B-0EC9-496C-B2E1-F827CA4247B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C25E2DB0-32EB-4058-9DB8-646D066AACC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C25E2DB0-32EB-4058-9DB8-646D066AACC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C25E2DB0-32EB-4058-9DB8-646D066AACC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C25E2DB0-32EB-4058-9DB8-646D066AACC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
