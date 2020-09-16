@@ -95,11 +95,19 @@ namespace PlainBuffers.CompilerCore.Generate {
     }
 
     private static void WriteEqualityOperators(string type, BlockWriter typeBlock) {
-      using (var wrBlock = typeBlock.Sub($"public static bool operator ==({type} l, {type} r)")) {
-        wrBlock.WriteLine("return l._Buffer == r._Buffer;");
+      using (var opBlock = typeBlock.Sub($"public static bool operator ==({type} l, {type} r)")) {
+        opBlock.WriteLine("return l._Buffer == r._Buffer;");
       }
-      using (var wrBlock = typeBlock.Sub($"public static bool operator !=({type} l, {type} r)")) {
-        wrBlock.WriteLine("return l._Buffer != r._Buffer;");
+      using (var opBlock = typeBlock.Sub($"public static bool operator !=({type} l, {type} r)")) {
+        opBlock.WriteLine("return l._Buffer != r._Buffer;");
+      }
+
+      typeBlock.WriteLine();
+      using (var eqBlock = typeBlock.Sub("public override bool Equals(object obj)")) {
+        eqBlock.WriteLine("return false;");
+      }
+      using (var hcBlock = typeBlock.Sub("public override bool Equals(object obj)")) {
+        hcBlock.WriteLine("throw new NotSupportedException();");
       }
     }
 

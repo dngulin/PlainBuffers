@@ -22,5 +22,8 @@ namespace PlainBuffers.Core {
 
     public static bool operator ==(PlainInt32 l, PlainInt32 r) => l._Buffer == r._Buffer;
     public static bool operator !=(PlainInt32 l, PlainInt32 r) => l._Buffer != r._Buffer;
+
+    public override bool Equals(object obj) => false;
+    public override int GetHashCode() => throw new NotSupportedException();
   }
 }
