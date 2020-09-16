@@ -93,6 +93,15 @@ namespace PlainBuffers.Generate {
       }
     }
 
+    private static void WriteEqualityOperators(string type, BlockWriter typeBlock) {
+      using (var wrBlock = typeBlock.Sub($"public static bool operator ==({type} l, {type} r)")) {
+        wrBlock.WriteLine("return l._Buffer == r._Buffer;");
+      }
+      using (var wrBlock = typeBlock.Sub($"public static bool operator !=({type} l, {type} r)")) {
+        wrBlock.WriteLine("return l._Buffer != r._Buffer;");
+      }
+    }
+
     private static void WriteEnum(EnumTypeInfo typeInfo, BlockWriter nsBlock) {
       if (typeInfo.IsFlags)
         nsBlock.WriteLine("[Flags]");
@@ -148,6 +157,9 @@ namespace PlainBuffers.Generate {
 
         typeBlock.WriteLine();
         WriteArrayEnumerator(typeInfo.Name, itemType, typeBlock);
+
+        typeBlock.WriteLine();
+        WriteEqualityOperators(typeInfo.Name, typeBlock);
       }
     }
 
@@ -190,7 +202,7 @@ namespace PlainBuffers.Generate {
       }
     }
 
-    private void WriteStruct(StructTypeInfo typeInfo, BlockWriter nsBlock, IReadOnlyDictionary<string, int> typeSizes) {
+    private static void WriteStruct(StructTypeInfo typeInfo, BlockWriter nsBlock, IReadOnlyDictionary<string, int> typeSizes) {
       using (var typeBlock = nsBlock.Sub($"public ref struct {typeInfo.Name}")) {
         typeBlock.WriteLine($"public const int Size = {typeInfo.Size};");
 
@@ -236,6 +248,9 @@ namespace PlainBuffers.Generate {
             wdBlock.WriteLine("_Buffer.Slice(paddingOffset, paddingSize).Fill(0);");
           }
         }
+
+        typeBlock.WriteLine();
+        WriteEqualityOperators(typeInfo.Name, typeBlock);
       }
     }
 
