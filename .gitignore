@@ -1,5 +1,8 @@
 .idea
 *.DotSettings.user
 
-PlainBuffers/bin
-PlainBuffers/obj
+Core/bin
+Core/obj
+
+CompilerCore/bin
+CompilerCore/obj
