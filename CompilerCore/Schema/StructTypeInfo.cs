@@ -1,8 +1,7 @@
 namespace PlainBuffers.CompilerCore.Schema {
   public class StructTypeInfo : BaseTypeInfo {
     public readonly FieldInfo[] Fields;
-    public StructTypeInfo(string name, int unalignedSize, int alignment, FieldInfo[] fields)
-      : base(name, unalignedSize, alignment) {
+    public StructTypeInfo(string name, FieldInfo[] fields) : base(name) {
       Fields = fields;
     }
   }
@@ -17,7 +16,5 @@ namespace PlainBuffers.CompilerCore.Schema {
       Name = name;
       DefaultValue = defaultValue;
     }
-
-    public bool IsPrimitive => !string.IsNullOrEmpty(DefaultValue);
   }
 }

@@ -6,24 +6,21 @@ namespace PlainBuffers.CompilerCore.Parse {
   public static class ParsingHelper {
     private const string NameRegex = @"^[A-Za-z_][A-Za-z0-9_]*$";
 
-    public static bool IsPrimitive(string typeName) {
-      switch (typeName) {
-        case "sbyte":
-        case "byte":
-        case "bool":
-        case "short":
-        case "ushort":
-        case "int":
-        case "uint":
-        case "float":
-        case "long":
-        case "ulong":
-        case "double":
-          return true;
-      }
+    public static readonly string[] Primitives = {
+      "sbyte",
+      "byte",
+      "bool",
+      "short",
+      "ushort",
+      "int",
+      "uint",
+      "float",
+      "long",
+      "ulong",
+      "double"
+    };
 
-      return false;
-    }
+    public static bool IsPrimitive(string type) => Primitives.Contains(type);
 
     public static bool IsInteger(string typeName) {
       switch (typeName) {
@@ -41,8 +38,8 @@ namespace PlainBuffers.CompilerCore.Parse {
       return false;
     }
 
-    public static int GetPrimitiveTypeSize(string typeName) {
-      switch (typeName) {
+    public static int GetPrimitiveTypeSize(string type) {
+      switch (type) {
         case "sbyte":
         case "byte":
         case "bool":
@@ -63,7 +60,7 @@ namespace PlainBuffers.CompilerCore.Parse {
           return 8;
 
         default:
-          throw new Exception($"Unknown primitive type `{typeName}`");
+          throw new Exception($"Unknown primitive type `{type}`");
       }
     }
 

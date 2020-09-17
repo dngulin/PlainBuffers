@@ -16,16 +16,16 @@ namespace PlainBuffers.CompilerCore.Parse {
         throw new Exception($"Invalid namespace `{schemaXml.NameSpace}`");
 
       var types = new BaseTypeInfo[schemaXml.Types.Length];
-      var index = new Dictionary<string, BaseTypeInfo>(schemaXml.Types.Length);
+      var index = new HashSet<string>(ParsingHelper.Primitives);
 
       for (var i = 0; i < schemaXml.Types.Length; i++) {
         var typeXml = schemaXml.Types[i];
 
-        if (!ParsingHelper.IsNameValid(typeXml.Name))
+        if (ParsingHelper.IsPrimitive(typeXml.Name) || !ParsingHelper.IsNameValid(typeXml.Name))
           throw new Exception($"Invalid type name `{typeXml.Name}`");
 
-        if (index.ContainsKey(typeXml.Name))
-          throw new Exception($"Type `{typeXml.Name}` is defined twice");
+        if (index.Contains(typeXml.Name))
+          throw new Exception($"Type `{typeXml.Name}` is defined more then once");
 
         BaseTypeInfo typeInfo;
         switch (typeXml) {
@@ -43,7 +43,7 @@ namespace PlainBuffers.CompilerCore.Parse {
         }
 
         types[i] = typeInfo;
-        index.Add(typeInfo.Name, typeInfo);
+        index.Add(typeXml.Name);
       }
 
       return new SchemaInfo { NameSpace = schemaXml.NameSpace, Types = types };
@@ -52,9 +52,7 @@ namespace PlainBuffers.CompilerCore.Parse {
     private static BaseTypeInfo HandleEnum(EnumXml enumXml) {
       var underlyingType = enumXml.UnderlyingType ?? "int";
       if (!ParsingHelper.IsInteger(underlyingType))
-        throw new Exception($"Enum `{enumXml.Name}` has wrong underlying type `{underlyingType}`");
-
-      var size = ParsingHelper.GetPrimitiveTypeSize(underlyingType);
+        throw new Exception($"Enum `{enumXml.Name}` has the wrong underlying type `{underlyingType}`");
 
       var knownItemNames = new HashSet<string>();
       var items = new EnumItemInfo[enumXml.Items.Length];
@@ -63,41 +61,35 @@ namespace PlainBuffers.CompilerCore.Parse {
         var itemXml = enumXml.Items[i];
 
         if (!ParsingHelper.IsNameValid(itemXml.Name))
-          throw new Exception($"Enum `{enumXml.Name}` contains item with invalid name `{itemXml.Name}`");
+          throw new Exception($"Enum `{enumXml.Name}` contains item with the invalid name `{itemXml.Name}`");
 
         if (knownItemNames.Contains(itemXml.Name))
-          throw new Exception($"Enum `{enumXml.Name}` contains more then one item with name `{itemXml.Name}`");
+          throw new Exception($"Enum `{enumXml.Name}` contains more then one item with the name `{itemXml.Name}`");
 
-        // TODO: Validate item value
+        // TODO: validate item value syntax
 
         knownItemNames.Add(itemXml.Name);
         items[i] = new EnumItemInfo(itemXml.Name, itemXml.Value);
       }
 
-      return new EnumTypeInfo( enumXml.Name, size, underlyingType, enumXml.IsFlags, items);
+      return new EnumTypeInfo( enumXml.Name, underlyingType, enumXml.IsFlags, items);
     }
 
-    private static BaseTypeInfo HandleArray(ArrayXml arrayXml, IReadOnlyDictionary<string, BaseTypeInfo> index) {
+    private static BaseTypeInfo HandleArray(ArrayXml arrayXml, HashSet<string> knownTypes) {
       if (arrayXml.Length <= 0)
-        throw new Exception($"Array type `{arrayXml.Name}` has invalid length {arrayXml.Length}");
+        throw new Exception($"Array type `{arrayXml.Name}` has the invalid length {arrayXml.Length}");
 
-      var itemSizeInfo =
-        GetTypeSizeInfo(arrayXml.ItemTypeName, index) ??
-        throw new Exception($"Unknown item type `{arrayXml.ItemTypeName}` used in array type `{arrayXml.Name}`");
+      if (!knownTypes.Contains(arrayXml.ItemTypeName))
+        throw new Exception($"Unknown item type `{arrayXml.ItemTypeName}` used in the array type `{arrayXml.Name}`");
 
-      // TODO: validate default value (useful only with primitive type and enum)
+      // TODO: validate default value syntax
 
-      return new ArrayTypeInfo(
-        arrayXml.Name, itemSizeInfo.Size * arrayXml.Length, itemSizeInfo.Alignment,
-        arrayXml.ItemTypeName, arrayXml.Length, arrayXml.ItemDefaultValue);
+      return new ArrayTypeInfo( arrayXml.Name, arrayXml.ItemTypeName, arrayXml.Length, arrayXml.ItemDefaultValue);
     }
 
-    private static BaseTypeInfo HandleStruct(StructXml structXml, IReadOnlyDictionary<string, BaseTypeInfo> index) {
+    private static BaseTypeInfo HandleStruct(StructXml structXml, HashSet<string> knownTypes) {
       if (structXml.Fields.Length <= 0)
         throw new Exception($"Type `{structXml.Name}` is zero-sized");
-
-      var unalignedSize = 0;
-      var alignment = sizeof(byte);
 
       var knownFieldNames = new HashSet<string>();
       var fields = new FieldInfo[structXml.Fields.Length];
@@ -106,60 +98,22 @@ namespace PlainBuffers.CompilerCore.Parse {
         var fieldXml = structXml.Fields[i];
 
         if (!ParsingHelper.IsNameValid(fieldXml.Name))
-          throw new Exception($"Type `{structXml.Name}` has field with invalid name `{fieldXml.Name}`");
+          throw new Exception($"Type `{structXml.Name}` has field with an invalid name `{fieldXml.Name}`");
 
         if (knownFieldNames.Contains(fieldXml.Name))
-          throw new Exception($"Type `{structXml.Name}` contains more then one field with name `{fieldXml.Name}`");
+          throw new Exception($"Type `{structXml.Name}` contains more then one field with the name `{fieldXml.Name}`");
 
         knownFieldNames.Add(fieldXml.Name);
 
-        var fieldSizeInfo =
-          GetTypeSizeInfo(fieldXml.Type, index) ??
-          throw new Exception($"Type `{structXml.Name}` has field `{fieldXml.Name}` of unknown type `{fieldXml.Type}`");
+        if (!knownTypes.Contains(fieldXml.Type))
+          throw new Exception($"Type `{structXml.Name}` has the field `{fieldXml.Name}` of the unknown type `{fieldXml.Type}`");
 
-        unalignedSize += fieldSizeInfo.Size;
-        if (fieldSizeInfo.Alignment >= alignment)
-          alignment = fieldSizeInfo.Alignment;
-
-        // TODO: validate default value
+        // TODO: validate default value syntax
 
         fields[i] = new FieldInfo(fieldXml.Type, fieldXml.Name, fieldXml.Default);
       }
 
-      Array.Sort(fields, (a, b) => {
-        var alignmentA = GetTypeSizeInfo(a.Type, index)?.Alignment ?? 0;
-        var alignmentB = GetTypeSizeInfo(b.Type, index)?.Alignment ?? 0;
-        if (alignmentA != alignmentB)
-          return alignmentB.CompareTo(alignmentA);
-
-        var orderA = Array.FindIndex(structXml.Fields, f => f.Name == a.Name);
-        var orderB = Array.FindIndex(structXml.Fields, f => f.Name == b.Name);
-        return orderA.CompareTo(orderB);
-      });
-
-      return new StructTypeInfo(structXml.Name, unalignedSize, alignment, fields);
-    }
-
-    private static TypeSizeInfo? GetTypeSizeInfo(string type, IReadOnlyDictionary<string, BaseTypeInfo> index) {
-      if (ParsingHelper.IsPrimitive(type)) {
-        var size = ParsingHelper.GetPrimitiveTypeSize(type);
-        return new TypeSizeInfo(size, size);
-      }
-
-      if (index.TryGetValue(type, out var typeXml))
-        return new TypeSizeInfo(typeXml.Size, typeXml.Alignment);
-
-      return null;
-    }
-
-    private readonly struct TypeSizeInfo {
-      public readonly int Size;
-      public readonly int Alignment;
-
-      public TypeSizeInfo(int size, int alignment) {
-        Size = size;
-        Alignment = alignment;
-      }
+      return new StructTypeInfo(structXml.Name, fields);
     }
   }
 }

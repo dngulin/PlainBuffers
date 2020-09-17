@@ -4,8 +4,7 @@ namespace PlainBuffers.CompilerCore.Schema {
     public readonly bool IsFlags;
     public readonly EnumItemInfo[] Items;
 
-    public EnumTypeInfo(string name, int size, string underlyingType, bool isFlags,
-      EnumItemInfo[] items) : base(name, size, size) {
+    public EnumTypeInfo(string name, string underlyingType, bool isFlags, EnumItemInfo[] items) : base(name) {
       UnderlyingType = underlyingType;
       IsFlags = isFlags;
       Items = items;

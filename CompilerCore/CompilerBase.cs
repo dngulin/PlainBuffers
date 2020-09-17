@@ -20,7 +20,7 @@ namespace PlainBuffers.CompilerCore {
     public void Compile(Stream readStream, Stream writeStream) {
       var schema = _parser.Parse(readStream);
       using (var writer = new StreamWriter(writeStream)) {
-        _generator.Generate(schema, writer);
+        _generator.Generate(null, writer);
       }
     }
   }

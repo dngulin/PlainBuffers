@@ -4,8 +4,7 @@ namespace PlainBuffers.CompilerCore.Schema {
     public readonly int Length;
     public readonly string ItemDefaultValue;
 
-    public ArrayTypeInfo(string name, int size, int alignment, string itemType, int length, string itemDefaultValue)
-      : base(name, size, alignment) {
+    public ArrayTypeInfo(string name, string itemType, int length, string itemDefaultValue) : base(name) {
       ItemType = itemType;
       Length = length;
       ItemDefaultValue = itemDefaultValue;
