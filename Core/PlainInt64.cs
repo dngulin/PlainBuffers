@@ -20,8 +20,8 @@ namespace PlainBuffers.Core {
 
     public void CopyTo(PlainInt64 other) => _Buffer.CopyTo(other._Buffer);
 
-    public static bool operator ==(PlainInt64 l, PlainInt64 r) => l._Buffer == r._Buffer;
-    public static bool operator !=(PlainInt64 l, PlainInt64 r) => l._Buffer != r._Buffer;
+    public static bool operator ==(PlainInt64 l, PlainInt64 r) => l._Buffer.SequenceEqual(r._Buffer);
+    public static bool operator !=(PlainInt64 l, PlainInt64 r) => !l._Buffer.SequenceEqual(r._Buffer);
 
     public override bool Equals(object obj) => false;
     public override int GetHashCode() => throw new NotSupportedException();

@@ -23,8 +23,8 @@ namespace PlainBuffers.Core {
 
     public void CopyTo(PlainFloat other) => _Buffer.CopyTo(other._Buffer);
 
-    public static bool operator ==(PlainFloat l, PlainFloat r) => l._Buffer == r._Buffer;
-    public static bool operator !=(PlainFloat l, PlainFloat r) => l._Buffer != r._Buffer;
+    public static bool operator ==(PlainFloat l, PlainFloat r) => l._Buffer.SequenceEqual(r._Buffer);
+    public static bool operator !=(PlainFloat l, PlainFloat r) => !l._Buffer.SequenceEqual(r._Buffer);
 
     public override bool Equals(object obj) => false;
     public override int GetHashCode() => throw new NotSupportedException();
