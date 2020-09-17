@@ -94,8 +94,8 @@ namespace PlainBuffers.CompilerCore.Generate {
     }
 
     private static void WriteEqualityOperators(string type, BlockWriter typeBlock) {
-      typeBlock.WriteLine($"public static bool operator ==({type} l, {type} r) => l._Buffer == r._Buffer;");
-      typeBlock.WriteLine($"public static bool operator !=({type} l, {type} r) => l._Buffer != r._Buffer;");
+      typeBlock.WriteLine($"public static bool operator ==({type} l, {type} r) => l._Buffer.SequenceEqual(r._Buffer);");
+      typeBlock.WriteLine($"public static bool operator !=({type} l, {type} r) => !l._Buffer.SequenceEqual(r._Buffer);");
       typeBlock.WriteLine();
       typeBlock.WriteLine("public override bool Equals(object obj) => false;");
       typeBlock.WriteLine("public override int GetHashCode() => throw new NotSupportedException();");
