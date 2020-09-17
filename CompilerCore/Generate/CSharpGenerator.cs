@@ -136,12 +136,11 @@ namespace PlainBuffers.CompilerCore.Generate {
         WriteCopyToMethod(typeInfo.Name, typeBlock);
 
         // TODO: optimize WriteDefault
-        if (!string.IsNullOrEmpty(typeInfo.ItemDefaultValue)) {
-          typeBlock.WriteLine();
-          using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
-          using (var forBlock = wdBlock.Sub("for (var i = 0; i < Length; i++)")) {
-            forBlock.WriteLine($"this[i].Write({typeInfo.ItemDefaultValue});");
-          }
+        typeBlock.WriteLine();
+        using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
+        using (var forBlock = wdBlock.Sub("for (var i = 0; i < Length; i++)")) {
+          var isPrimitive = !string.IsNullOrEmpty(typeInfo.ItemDefaultValue);
+          forBlock.WriteLine(isPrimitive ? $"this[i].Write({typeInfo.ItemDefaultValue});" : "this[i].WriteDefault();");
         }
 
         typeBlock.WriteLine();
