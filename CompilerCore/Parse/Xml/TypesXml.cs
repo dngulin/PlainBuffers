@@ -9,6 +9,11 @@ namespace PlainBuffers.CompilerCore.Parse.Xml {
     [XmlElement("enum", Type = typeof(EnumXml))]
     [XmlElement("struct", Type = typeof(StructXml))]
     [XmlElement("array", Type = typeof(ArrayXml))]
-    public BaseTypeXml[] Types = Array.Empty<BaseTypeXml>();
+    public BaseTypeXml[] Types {
+      get => _types ?? Array.Empty<BaseTypeXml>();
+      set => _types = value;
+    }
+
+    private BaseTypeXml[] _types;
   }
 }

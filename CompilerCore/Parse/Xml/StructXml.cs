@@ -4,7 +4,11 @@ using System.Xml.Serialization;
 namespace PlainBuffers.CompilerCore.Parse.Xml {
   public class StructXml : BaseTypeXml {
     [XmlElement("field")]
-    public FieldXml[] Fields = Array.Empty<FieldXml>();
+    public FieldXml[] Fields {
+      get => _fields ?? Array.Empty<FieldXml>();
+      set => _fields = value;
+    }
+    private FieldXml[] _fields;
   }
 
   public class FieldXml {
