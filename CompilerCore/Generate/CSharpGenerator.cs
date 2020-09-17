@@ -125,28 +125,22 @@ namespace PlainBuffers.CompilerCore.Generate {
         typeBlock.WriteLine();
         WriteConstructor(typeInfo.Name, typeBlock);
 
-        typeBlock.WriteLine();
-        WriteCopyToMethod(typeInfo.Name, typeBlock);
-
         if (!PrimitiveTypes.TryGetValue(typeInfo.ItemType, out var itemType))
           itemType = typeInfo.ItemType;
 
-        // Indexer
         typeBlock.WriteLine();
-        using (var idxBlock = typeBlock.Sub($"public {itemType} this[int index]"))
-        using (var getBlock = idxBlock.Sub("get")) {
-          using (var ifBlock = getBlock.Sub("if (index < 0 || index >= Length)")) {
-            ifBlock.WriteLine("throw new IndexOutOfRangeException();"); // TODO: message
-          }
-          getBlock.WriteLine($"return new {itemType}(_Buffer.Slice({itemType}.Size * index, {itemType}.Size));");
-        }
+        var slice = $"_Buffer.Slice({itemType}.Size * index, {itemType}.Size)";
+        typeBlock.WriteLine($"public {itemType} this[int index] => new {itemType}({slice});");
 
-        // WriteDefault
+        typeBlock.WriteLine();
+        WriteCopyToMethod(typeInfo.Name, typeBlock);
+
+        // TODO: optimize WriteDefault
         if (!string.IsNullOrEmpty(typeInfo.ItemDefaultValue)) {
           typeBlock.WriteLine();
           using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
           using (var forBlock = wdBlock.Sub("for (var i = 0; i < Length; i++)")) {
-            forBlock.WriteLine($"this[i].Write({typeInfo.ItemDefaultValue});"); // TODO: exponential size copy
+            forBlock.WriteLine($"this[i].Write({typeInfo.ItemDefaultValue});");
           }
         }
 
@@ -173,7 +167,7 @@ namespace PlainBuffers.CompilerCore.Generate {
         }
 
         enumeratorBlock.WriteLine();
-        enumeratorBlock.WriteLine($"public bool MoveNext() => ++_index < {arrayType}.Length;");
+        enumeratorBlock.WriteLine("public bool MoveNext() => ++_index < Length;");
         enumeratorBlock.WriteLine($"public {itemType} Current => _array[_index];");
 
         enumeratorBlock.WriteLine();
