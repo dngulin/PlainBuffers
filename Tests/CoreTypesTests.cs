@@ -1,8 +1,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using PlainBuffers.Core;
 using Xunit;
 
-namespace PlainBuffers.Core.Tests {
+namespace PlainBuffers.Tests {
   public class CoreTypesTests {
     private readonly byte[] _buffer = new byte[PlainUInt64.Size * 2];
 

@@ -5,7 +5,7 @@
 
         <IsPackable>false</IsPackable>
 
-        <RootNamespace>PlainBuffers.Core.Tests</RootNamespace>
+        <RootNamespace>PlainBuffers.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
