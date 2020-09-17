@@ -4,6 +4,9 @@
 Core/bin
 Core/obj
 
+Core.Tests/bin
+Core.Tests/obj
+
 CompilerCore/bin
 CompilerCore/obj
 
