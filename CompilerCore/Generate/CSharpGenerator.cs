@@ -42,6 +42,9 @@ namespace PlainBuffers.CompilerCore.Generate {
       writer.WriteLine($"// Generated at {DateTimeOffset.Now:O}");
       writer.WriteLine();
 
+      writer.WriteLine("// ReSharper disable All");
+      writer.WriteLine();
+
       writer.WriteLine("using System;");
       writer.WriteLine("using PlainBuffers.Core;");
       writer.WriteLine();
