@@ -3,6 +3,6 @@ using PlainBuffers.CompilerCore.Schema;
 
 namespace PlainBuffers.CompilerCore {
   public interface IGenerator {
-    void Generate(TypesGenInfo schema, TextWriter writer);
+    void Generate(CodeGenData data, TextWriter writer);
   }
 }

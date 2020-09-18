@@ -9,14 +9,14 @@ namespace PlainBuffers.CompilerCore.Parse {
   public class XmlParser : IParser {
     private readonly XmlSerializer _serializer = new XmlSerializer(typeof(TypesXml));
 
-    public SchemaInfo Parse(Stream readStream) {
+    public ParsedData Parse(Stream readStream) {
       var schemaXml = (TypesXml) _serializer.Deserialize(readStream);
 
       if (!ParsingHelper.IsDotSeparatedNameValid(schemaXml.NameSpace))
         throw new Exception($"Invalid namespace `{schemaXml.NameSpace}`");
 
-      var types = new BaseTypeInfo[schemaXml.Types.Length];
-      var index = new HashSet<string>(ParsingHelper.Primitives);
+      var types = new ParsedType[schemaXml.Types.Length];
+      var knownTypes = new HashSet<string>(ParsingHelper.Primitives);
 
       for (var i = 0; i < schemaXml.Types.Length; i++) {
         var typeXml = schemaXml.Types[i];
@@ -24,38 +24,38 @@ namespace PlainBuffers.CompilerCore.Parse {
         if (ParsingHelper.IsPrimitive(typeXml.Name) || !ParsingHelper.IsNameValid(typeXml.Name))
           throw new Exception($"Invalid type name `{typeXml.Name}`");
 
-        if (index.Contains(typeXml.Name))
+        if (knownTypes.Contains(typeXml.Name))
           throw new Exception($"Type `{typeXml.Name}` is defined more then once");
 
-        BaseTypeInfo typeInfo;
+        ParsedType type;
         switch (typeXml) {
           case EnumXml enumXml:
-            typeInfo = HandleEnum(enumXml);
+            type = HandleEnum(enumXml);
             break;
           case ArrayXml arrayXml:
-            typeInfo = HandleArray(arrayXml, index);
+            type = HandleArray(arrayXml, knownTypes);
             break;
           case StructXml structXml:
-            typeInfo = HandleStruct(structXml, index);
+            type = HandleStruct(structXml, knownTypes);
             break;
           default:
             throw new Exception("Internal parsing error: unknown type variant");
         }
 
-        types[i] = typeInfo;
-        index.Add(typeXml.Name);
+        types[i] = type;
+        knownTypes.Add(typeXml.Name);
       }
 
-      return new SchemaInfo { NameSpace = schemaXml.NameSpace, Types = types };
+      return new ParsedData { NameSpace = schemaXml.NameSpace, Types = types };
     }
 
-    private static BaseTypeInfo HandleEnum(EnumXml enumXml) {
-      var underlyingType = enumXml.UnderlyingType ?? "int";
+    private static ParsedEnumType HandleEnum(EnumXml enumXml) {
+      var underlyingType = enumXml.UnderlyingType;
       if (!ParsingHelper.IsInteger(underlyingType))
         throw new Exception($"Enum `{enumXml.Name}` has the wrong underlying type `{underlyingType}`");
 
       var knownItemNames = new HashSet<string>();
-      var items = new EnumItemInfo[enumXml.Items.Length];
+      var items = new ParsedEnumItem[enumXml.Items.Length];
 
       for (var i = 0; i < items.Length; i++) {
         var itemXml = enumXml.Items[i];
@@ -69,13 +69,13 @@ namespace PlainBuffers.CompilerCore.Parse {
         // TODO: validate item value syntax
 
         knownItemNames.Add(itemXml.Name);
-        items[i] = new EnumItemInfo(itemXml.Name, itemXml.Value);
+        items[i] = new ParsedEnumItem(itemXml.Name, itemXml.Value);
       }
 
-      return new EnumTypeInfo( enumXml.Name, underlyingType, enumXml.IsFlags, items);
+      return new ParsedEnumType(enumXml.Name, underlyingType, enumXml.IsFlags, items);
     }
 
-    private static BaseTypeInfo HandleArray(ArrayXml arrayXml, HashSet<string> knownTypes) {
+    private static ParsedArrayType HandleArray(ArrayXml arrayXml, ICollection<string> knownTypes) {
       if (arrayXml.Length <= 0)
         throw new Exception($"Array type `{arrayXml.Name}` has the invalid length {arrayXml.Length}");
 
@@ -84,15 +84,15 @@ namespace PlainBuffers.CompilerCore.Parse {
 
       // TODO: validate default value syntax
 
-      return new ArrayTypeInfo( arrayXml.Name, arrayXml.ItemTypeName, arrayXml.Length, arrayXml.ItemDefaultValue);
+      return new ParsedArrayType(arrayXml.Name, arrayXml.ItemTypeName, arrayXml.Length, arrayXml.ItemDefaultValue);
     }
 
-    private static BaseTypeInfo HandleStruct(StructXml structXml, HashSet<string> knownTypes) {
+    private static ParsedStruct HandleStruct(StructXml structXml, ICollection<string> knownTypes) {
       if (structXml.Fields.Length <= 0)
         throw new Exception($"Type `{structXml.Name}` is zero-sized");
 
       var knownFieldNames = new HashSet<string>();
-      var fields = new FieldInfo[structXml.Fields.Length];
+      var fields = new ParsedField[structXml.Fields.Length];
 
       for (var i = 0; i < fields.Length; i++) {
         var fieldXml = structXml.Fields[i];
@@ -110,10 +110,10 @@ namespace PlainBuffers.CompilerCore.Parse {
 
         // TODO: validate default value syntax
 
-        fields[i] = new FieldInfo(fieldXml.Type, fieldXml.Name, fieldXml.Default);
+        fields[i] = new ParsedField(fieldXml.Type, fieldXml.Name, fieldXml.Default);
       }
 
-      return new StructTypeInfo(structXml.Name, fields);
+      return new ParsedStruct(structXml.Name, fields);
     }
   }
 }

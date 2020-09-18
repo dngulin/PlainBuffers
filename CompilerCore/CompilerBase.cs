@@ -1,4 +1,5 @@
 using System.IO;
+using PlainBuffers.CompilerCore.Preprocess;
 
 namespace PlainBuffers.CompilerCore {
   public class CompilerBase {
@@ -18,9 +19,11 @@ namespace PlainBuffers.CompilerCore {
     }
 
     public void Compile(Stream readStream, Stream writeStream) {
-      var schema = _parser.Parse(readStream);
+      var parsedData = _parser.Parse(readStream);
+      var codeGenData = ParsedDataProcessor.Process(parsedData);
+
       using (var writer = new StreamWriter(writeStream)) {
-        _generator.Generate(null, writer);
+        _generator.Generate(codeGenData, writer);
       }
     }
   }
