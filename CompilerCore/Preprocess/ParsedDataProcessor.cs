@@ -61,7 +61,6 @@ namespace PlainBuffers.CompilerCore.Preprocess {
       return new CodeGenArray(pdArray.Name, size, pdArray.ItemType, pdArray.Length, defaultValue, isEnumItem);
     }
 
-    // TODO: Decomposition
     private static CodeGenStruct HandleStruct(ParsedStruct pdStruct, ProcessingIndex index) {
       if (pdStruct.Fields.Length == 0)
         throw new Exception($"Struct `{pdStruct.Name}` is zero-sized");
