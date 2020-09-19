@@ -4,11 +4,11 @@ using PlainBuffers.CompilerCore.Internal;
 using PlainBuffers.CompilerCore.Parsing;
 
 namespace PlainBuffers.CompilerCore {
-  public class CompilerBase {
+  public class PlainBuffersCompiler {
     private readonly IParser _parser;
     private readonly IGenerator _generator;
 
-    public CompilerBase(IParser parser, IGenerator generator) {
+    public PlainBuffersCompiler(IParser parser, IGenerator generator) {
       _parser = parser;
       _generator = generator;
     }

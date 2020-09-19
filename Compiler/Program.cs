@@ -13,7 +13,7 @@ namespace PlainBuffers.Compiler {
 
       var parser = new XmlParser(); // TODO: Select by argument
       var generator = new CSharpGenerator(); // TODO: Select by argument
-      var compiler = new CompilerBase(parser, generator);
+      var compiler = new PlainBuffersCompiler(parser, generator);
 
       try {
         compiler.Compile(args[0], args[1]);
