@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
+using PlainBuffers.CompilerCore.Parse.Data;
 using PlainBuffers.CompilerCore.Parse.Xml;
-using PlainBuffers.CompilerCore.Schema;
 
 namespace PlainBuffers.CompilerCore.Parse {
   public class XmlParser : IParser {

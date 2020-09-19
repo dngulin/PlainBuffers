@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
-using PlainBuffers.CompilerCore.Schema;
+using PlainBuffers.CompilerCore.Generate.Data;
+using PlainBuffers.CompilerCore.Parse.Data;
 
 namespace PlainBuffers.CompilerCore.Preprocess {
   internal static class ParsedDataProcessor {

@@ -1,7 +1,7 @@
 using System.IO;
-using PlainBuffers.CompilerCore.Schema;
+using PlainBuffers.CompilerCore.Parse.Data;
 
-namespace PlainBuffers.CompilerCore {
+namespace PlainBuffers.CompilerCore.Parse {
   public interface IParser {
     ParsedData Parse(Stream readStream);
   }

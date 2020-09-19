@@ -1,4 +1,6 @@
 using System.IO;
+using PlainBuffers.CompilerCore.Generate;
+using PlainBuffers.CompilerCore.Parse;
 using PlainBuffers.CompilerCore.Preprocess;
 
 namespace PlainBuffers.CompilerCore {

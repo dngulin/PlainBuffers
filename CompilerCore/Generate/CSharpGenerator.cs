@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PlainBuffers.CompilerCore.Schema;
+using PlainBuffers.CompilerCore.Generate.Data;
 using PlainBuffers.Core;
 
 namespace PlainBuffers.CompilerCore.Generate {
