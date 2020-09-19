@@ -1,7 +1,7 @@
 using System.IO;
-using PlainBuffers.CompilerCore.Generate;
-using PlainBuffers.CompilerCore.Parse;
-using PlainBuffers.CompilerCore.Preprocess;
+using PlainBuffers.CompilerCore.CodeGen;
+using PlainBuffers.CompilerCore.Internal;
+using PlainBuffers.CompilerCore.Parsing;
 
 namespace PlainBuffers.CompilerCore {
   public class CompilerBase {

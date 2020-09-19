@@ -1,7 +1,7 @@
 ﻿using System;
 using PlainBuffers.CompilerCore;
-using PlainBuffers.CompilerCore.Generate;
-using PlainBuffers.CompilerCore.Parse;
+using PlainBuffers.CompilerCore.Generators;
+using PlainBuffers.CompilerCore.Parsers;
 
 namespace PlainBuffers.Compiler {
   public static class Program {
