@@ -9,7 +9,7 @@ namespace PlainBuffers.Core {
 
     public PlainInt8(Span<byte> buffer) {
       if (buffer.Length != Size)
-        throw new InvalidOperationException();
+        throw new InvalidOperationException("Buffer size doesn't match to the struct size!");
 
       _buffer = buffer;
     }
