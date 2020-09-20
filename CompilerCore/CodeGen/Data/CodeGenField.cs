@@ -4,14 +4,12 @@ namespace PlainBuffers.CompilerCore.CodeGen.Data {
     public readonly string Name;
     public readonly string DefaultValue;
     public readonly int Offset;
-    public readonly bool IsFieldTypeEnum;
 
-    public CodeGenField(string type, string name, string defaultValue, int offset, bool isFieldTypeEnum) {
+    public CodeGenField(string type, string name, string defaultValue, int offset) {
       Type = type;
       Name = name;
       DefaultValue = defaultValue;
       Offset = offset;
-      IsFieldTypeEnum = isFieldTypeEnum;
     }
   }
 }

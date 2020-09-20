@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using PlainBuffers.CompilerCore.CodeGen.Data;
 using PlainBuffers.CompilerCore.Internal.Data;
@@ -6,21 +7,35 @@ using PlainBuffers.CompilerCore.Parsing.Data;
 
 namespace PlainBuffers.CompilerCore.Internal {
   internal static class PlainBuffersLayoutCalculator {
+    private static readonly Dictionary<string, TypeMemoryInfo> TypesMemInfo = new Dictionary<string, TypeMemoryInfo> {
+      {"bool", new TypeMemoryInfo(1)},
+      {"sbyte", new TypeMemoryInfo(1)},
+      {"byte", new TypeMemoryInfo(1)},
+      {"short", new TypeMemoryInfo(2)},
+      {"ushort", new TypeMemoryInfo(2)},
+      {"int", new TypeMemoryInfo(4)},
+      {"uint", new TypeMemoryInfo(4)},
+      {"float", new TypeMemoryInfo(4)},
+      {"long", new TypeMemoryInfo(8)},
+      {"ulong", new TypeMemoryInfo(8)},
+      {"double", new TypeMemoryInfo(8)}
+    };
+
     public static CodeGenData Calculate(ParsedData parsedData) {
-      var index = new ProcessingIndex();
+      var typesMemInfo = new Dictionary<string, TypeMemoryInfo>(TypesMemInfo);
       var codeGenTypes = new CodeGenType[parsedData.Types.Length];
 
       for (var i = 0; i < parsedData.Types.Length; i++) {
         CodeGenType codeGenType;
         switch (parsedData.Types[i]) {
           case ParsedEnumType pdEnum:
-            codeGenType = HandleEnum(pdEnum, index);
+            codeGenType = HandleEnum(pdEnum, typesMemInfo);
             break;
           case ParsedArrayType pdArray:
-            codeGenType = HandleArray(pdArray, index);
+            codeGenType = HandleArray(pdArray, typesMemInfo);
             break;
           case ParsedStruct pdStruct:
-            codeGenType = HandleStruct(pdStruct, index);
+            codeGenType = HandleStruct(pdStruct, typesMemInfo);
             break;
           default:
             throw new Exception($"Unknown type variant {parsedData.Types[i].GetType().Name}");
@@ -32,8 +47,8 @@ namespace PlainBuffers.CompilerCore.Internal {
       return new CodeGenData(parsedData.NameSpace, codeGenTypes);
     }
 
-    private static CodeGenEnum HandleEnum(ParsedEnumType pdEnum, ProcessingIndex index) {
-      if (!index.Types.TryGetValue(pdEnum.UnderlyingType, out var memInfo))
+    private static CodeGenEnum HandleEnum(ParsedEnumType pdEnum, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
+      if (!typesMemInfo.TryGetValue(pdEnum.UnderlyingType, out var memInfo))
         throw new Exception($"Invalid base type `{pdEnum.UnderlyingType}` of enum `{pdEnum.Name}`");
 
       var items = new CodeGenEnumItem[pdEnum.Items.Length];
@@ -42,14 +57,13 @@ namespace PlainBuffers.CompilerCore.Internal {
         items[i] = new CodeGenEnumItem(pdEnum.Items[i].Name, pdEnum.Items[i].Value);
       }
 
-      index.Types.Add(pdEnum.Name, new TypeMemoryInfo(memInfo.Size));
-      index.Enums.Add(pdEnum.Name);
+      typesMemInfo.Add(pdEnum.Name, new TypeMemoryInfo(memInfo.Size));
 
       return new CodeGenEnum(pdEnum.Name, memInfo.Size, pdEnum.UnderlyingType, pdEnum.IsFlags, items);
     }
 
-    private static CodeGenArray HandleArray(ParsedArrayType pdArray, ProcessingIndex index) {
-      if (!index.Types.TryGetValue(pdArray.ItemType, out var itemMemInfo))
+    private static CodeGenArray HandleArray(ParsedArrayType pdArray, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
+      if (!typesMemInfo.TryGetValue(pdArray.ItemType, out var itemMemInfo))
         throw new Exception($"Unknown item type `{pdArray.ItemType}` of array `{pdArray.Name}`");
 
       var size = itemMemInfo.Size * pdArray.Length;
@@ -57,51 +71,49 @@ namespace PlainBuffers.CompilerCore.Internal {
       // TODO: Set default value for primitive type if it is not parsed
       var defaultValue = pdArray.ItemDefaultValue;
 
-      var isEnumItem = index.Enums.Contains(pdArray.ItemType);
-      index.Types.Add(pdArray.Name, new TypeMemoryInfo(size, itemMemInfo.Alignment));
+      typesMemInfo.Add(pdArray.Name, new TypeMemoryInfo(size, itemMemInfo.Alignment));
 
-      return new CodeGenArray(pdArray.Name, size, pdArray.ItemType, pdArray.Length, defaultValue, isEnumItem);
+      return new CodeGenArray(pdArray.Name, size, pdArray.ItemType, pdArray.Length, defaultValue);
     }
 
-    private static CodeGenStruct HandleStruct(ParsedStruct pdStruct, ProcessingIndex index) {
+    private static CodeGenStruct HandleStruct(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
       if (pdStruct.Fields.Length == 0)
         throw new Exception($"Struct `{pdStruct.Name}` is zero-sized");
 
-      var fieldsMemoryInfo = GetFieldsMemoryInfo(pdStruct, index);
+      var fieldsMemInfo = GetFieldsMemoryInfo(pdStruct, typesMemInfo);
 
       var offset = 0;
       var fields = new CodeGenField[pdStruct.Fields.Length];
       for (var i = 0; i < fields.Length; i++) {
-        var (pdFieldIndex, memInfo) = fieldsMemoryInfo[i];
+        var (pdFieldIndex, memInfo) = fieldsMemInfo[i];
         var pdField = pdStruct.Fields[pdFieldIndex];
 
         // TODO: Set default value for primitive type if it is not parsed
         var defaultValue = pdField.DefaultValue;
 
-        var isEnum = index.Enums.Contains(pdField.Type);
-        fields[i] = new CodeGenField(pdField.Type, pdField.Name, defaultValue, offset, isEnum);
+        fields[i] = new CodeGenField(pdField.Type, pdField.Name, defaultValue, offset);
 
         offset += memInfo.Size;
       }
 
-      var unalignedSize = fieldsMemoryInfo.Sum(fmi => fmi.TypeMemoryInfo.Size);
-      var alignment = fieldsMemoryInfo.Max(fmi => fmi.TypeMemoryInfo.Alignment);
+      var unalignedSize = fieldsMemInfo.Sum(fmi => fmi.TypeMemoryInfo.Size);
+      var alignment = fieldsMemInfo.Max(fmi => fmi.TypeMemoryInfo.Alignment);
 
       var reminder = unalignedSize % alignment;
       var padding = reminder == 0 ? 0 : alignment - reminder;
       var size = unalignedSize + padding;
 
-      index.Types.Add(pdStruct.Name, new TypeMemoryInfo(size, alignment));
+      typesMemInfo.Add(pdStruct.Name, new TypeMemoryInfo(size, alignment));
 
       return new CodeGenStruct(pdStruct.Name, size, padding, fields);
     }
 
-    private static FieldMemoryInfo[] GetFieldsMemoryInfo(ParsedStruct pdStruct, ProcessingIndex index) {
+    private static FieldMemoryInfo[] GetFieldsMemoryInfo(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
       var fieldsMemInfo = new FieldMemoryInfo[pdStruct.Fields.Length];
 
       for (var i = 0; i < fieldsMemInfo.Length; i++) {
         var pdField = pdStruct.Fields[i];
-        if (!index.Types.TryGetValue(pdField.Type, out var memInfo))
+        if (!typesMemInfo.TryGetValue(pdField.Type, out var memInfo))
           throw new Exception($"Unknown field type `{pdField.Type}` defined in the struct `{pdStruct.Name}`");
 
         fieldsMemInfo[i] = new FieldMemoryInfo(i, memInfo);

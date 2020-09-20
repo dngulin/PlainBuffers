@@ -35,18 +35,20 @@ namespace PlainBuffers.CompilerCore.Generators {
       writer.WriteLine("using PlainBuffers.Core;");
       writer.WriteLine();
 
+      var typesMap = new Dictionary<string, string>(CSharpTypes);
+
       using (var nsBlock = new BlockWriter(writer, Indent, 0, $"namespace {data.NameSpace}")) {
         for (var i = 0; i < data.Types.Length; i++) {
           var typeInfo = data.Types[i];
           switch (typeInfo) {
             case CodeGenEnum enumGenInfo:
-              WriteEnum(enumGenInfo, nsBlock);
+              WriteEnum(enumGenInfo, nsBlock, typesMap);
               break;
             case CodeGenArray arrayGenInfo:
-              WriteArray(arrayGenInfo, nsBlock);
+              WriteArray(arrayGenInfo, nsBlock, typesMap);
               break;
             case CodeGenStruct structInfo:
-              WriteStruct(structInfo, nsBlock);
+              WriteStruct(structInfo, nsBlock, typesMap);
               break;
             default:
               throw new Exception("Unknown data type");
@@ -85,7 +87,11 @@ namespace PlainBuffers.CompilerCore.Generators {
       typeBlock.WriteLine("public override int GetHashCode() => throw new NotSupportedException();");
     }
 
-    private static void WriteEnum(CodeGenEnum enumType, BlockWriter nsBlock) {
+    private static string GetRealType(string type, IReadOnlyDictionary<string, string> typesMap) {
+      return typesMap.TryGetValue(type, out var replacement) ? replacement : type;
+    }
+
+    private static void WriteEnum(CodeGenEnum enumType, BlockWriter nsBlock, IDictionary<string, string> typesMap) {
       if (enumType.IsFlags)
         nsBlock.WriteLine("[Flags]");
 
@@ -101,15 +107,16 @@ namespace PlainBuffers.CompilerCore.Generators {
       }
 
       nsBlock.WriteLine();
-      WriteEnumWrapper(enumType, nsBlock);
+      var wrapperType = WriteEnumWrapper(enumType, nsBlock);
+      typesMap.Add(enumType.Name, wrapperType);
     }
 
-    private static void WriteEnumWrapper(CodeGenEnum enumType, BlockWriter nsBlock) {
+    private static string WriteEnumWrapper(CodeGenEnum enumType, BlockWriter nsBlock) {
       if (!CSharpTypes.TryGetValue(enumType.UnderlyingType, out var pbType))
         throw new Exception($"Enum `{enumType.Name}` has invalid underlying type `{enumType.UnderlyingType}`");
 
-      var cSharpType = enumType.UnderlyingType;
-      var wrapperType = $"_{enumType.Name}";
+      var primitiveType = enumType.UnderlyingType;
+      var wrapperType = $"_Plain{enumType.Name}";
 
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {wrapperType}")) {
         typeBlock.WriteLine($"public const int Size = {enumType.Size};");
@@ -120,7 +127,7 @@ namespace PlainBuffers.CompilerCore.Generators {
 
         typeBlock.WriteLine();
         typeBlock.WriteLine($"public {enumType.Name} Read() => ({enumType.Name}) _primitive.Read();");
-        typeBlock.WriteLine($"public void Write({enumType.Name} value) => _primitive.Write(({cSharpType}) value);");
+        typeBlock.WriteLine($"public void Write({enumType.Name} value) => _primitive.Write(({primitiveType}) value);");
 
         typeBlock.WriteLine();
         WriteCopyToMethod(wrapperType, typeBlock);
@@ -128,22 +135,21 @@ namespace PlainBuffers.CompilerCore.Generators {
         typeBlock.WriteLine();
         WriteEqualityOperators(wrapperType, typeBlock);
       }
+
+      return wrapperType;
     }
 
-    private static void WriteArray(CodeGenArray arrayType, BlockWriter nsBlock) {
+    private static void WriteArray(CodeGenArray arrayType, BlockWriter nsBlock, IReadOnlyDictionary<string, string> typesMap) {
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {arrayType.Name}")) {
         typeBlock.WriteLine($"public const int Size = {arrayType.Size};");
         typeBlock.WriteLine($"public const int Length = {arrayType.Length};");
 
         typeBlock.WriteLine();
         WriteConstructor(arrayType.Name, typeBlock);
-
-        if (!CSharpTypes.TryGetValue(arrayType.ItemType, out var itemType))
-          itemType = arrayType.ItemType;
+        var itemType = GetRealType(arrayType.ItemType, typesMap);
 
         typeBlock.WriteLine();
-        var typeExpr = arrayType.IsItemTypeEnum ? $"_{itemType}" : itemType;
-        var sliceExpr = $"_buffer.Slice({typeExpr}.Size * index, {typeExpr}.Size)";
+        var sliceExpr = $"_buffer.Slice({itemType}.Size * index, {itemType}.Size)";
         typeBlock.WriteLine($"public {itemType} this[int index] => new {itemType}({sliceExpr});");
 
         typeBlock.WriteLine();
@@ -166,15 +172,16 @@ namespace PlainBuffers.CompilerCore.Generators {
     }
 
     private static void WriteArrayEnumerator(string arrayType, string itemType, BlockWriter arrayBlock) {
-      arrayBlock.WriteLine("public _Enumerator GetEnumerator() => new _Enumerator(this);");
+      var enumeratorType = $"_EnumeratorOf{arrayType}";
+      arrayBlock.WriteLine($"public {enumeratorType} GetEnumerator() => new {enumeratorType}(this);");
 
       arrayBlock.WriteLine();
-      using (var enumeratorBlock = arrayBlock.Sub("public ref struct _Enumerator")) {
+      using (var enumeratorBlock = arrayBlock.Sub($"public ref struct {enumeratorType}")) {
         enumeratorBlock.WriteLine($"private readonly {arrayType} _array;");
         enumeratorBlock.WriteLine("private int _index;");
 
         enumeratorBlock.WriteLine();
-        using (var ctorBlock = enumeratorBlock.Sub($"public _Enumerator({arrayType} array)")) {
+        using (var ctorBlock = enumeratorBlock.Sub($"public {enumeratorType}({arrayType} array)")) {
           ctorBlock.WriteLine("_array = array;");
           ctorBlock.WriteLine("_index = -1;");
         }
@@ -189,7 +196,7 @@ namespace PlainBuffers.CompilerCore.Generators {
       }
     }
 
-    private static void WriteStruct(CodeGenStruct structType, BlockWriter nsBlock) {
+    private static void WriteStruct(CodeGenStruct structType, BlockWriter nsBlock, IReadOnlyDictionary<string, string> typesMap) {
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {structType.Name}")) {
         typeBlock.WriteLine($"public const int Size = {structType.Size};");
 
@@ -203,12 +210,9 @@ namespace PlainBuffers.CompilerCore.Generators {
 
         typeBlock.WriteLine();
         foreach (var field in structType.Fields) {
-          if (!CSharpTypes.TryGetValue(field.Type, out var fieldType))
-            fieldType = field.Type;
-
-          var typeExpr = field.IsFieldTypeEnum ? $"_{fieldType}" : fieldType;
-          var sliceExpr = $"_buffer.Slice({field.Offset}, {typeExpr}.Size)";
-          typeBlock.WriteLine($"public {typeExpr} {field.Name} => new {typeExpr}({sliceExpr});");
+          var fieldType = GetRealType(field.Type, typesMap);
+          var sliceExpr = $"_buffer.Slice({field.Offset}, {fieldType}.Size)";
+          typeBlock.WriteLine($"public {fieldType} {field.Name} => new {fieldType}({sliceExpr});");
         }
 
         typeBlock.WriteLine();
