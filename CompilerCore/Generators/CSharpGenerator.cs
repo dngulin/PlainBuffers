@@ -64,11 +64,10 @@ namespace PlainBuffers.CompilerCore.Generators {
 
       typeBlock.WriteLine();
       using (var ctorBlock = typeBlock.Sub($"public {type}(Span<byte> buffer)")) {
-        using (var ifBlock = ctorBlock.Sub("if (buffer.Length != Size)")) {
-          ifBlock.WriteLine("throw new InvalidOperationException();"); // TODO: message
-        }
-        ctorBlock.WriteLine("_buffer = buffer;");
+        const string msg = "\"Invalid buffer size!\"";
+        ctorBlock.WriteLine($"if (buffer.Length != Size) throw new InvalidOperationException({msg});");
 
+        ctorBlock.WriteLine("_buffer = buffer;");
         if (initializer != null)
           ctorBlock.WriteLine(initializer);
       }
