@@ -166,15 +166,15 @@ namespace PlainBuffers.CompilerCore.Generators {
     }
 
     private static void WriteArrayEnumerator(string arrayType, string itemType, BlockWriter arrayBlock) {
-      arrayBlock.WriteLine("public Enumerator GetEnumerator() => new Enumerator(this);");
+      arrayBlock.WriteLine("public _Enumerator GetEnumerator() => new _Enumerator(this);");
 
       arrayBlock.WriteLine();
-      using (var enumeratorBlock = arrayBlock.Sub("public ref struct Enumerator")) {
+      using (var enumeratorBlock = arrayBlock.Sub("public ref struct _Enumerator")) {
         enumeratorBlock.WriteLine($"private readonly {arrayType} _array;");
         enumeratorBlock.WriteLine("private int _index;");
 
         enumeratorBlock.WriteLine();
-        using (var ctorBlock = enumeratorBlock.Sub($"public Enumerator({arrayType} array)")) {
+        using (var ctorBlock = enumeratorBlock.Sub($"public _Enumerator({arrayType} array)")) {
           ctorBlock.WriteLine("_array = array;");
           ctorBlock.WriteLine("_index = -1;");
         }
