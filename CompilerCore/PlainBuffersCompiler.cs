@@ -22,7 +22,7 @@ namespace PlainBuffers.CompilerCore {
 
     public void Compile(Stream readStream, Stream writeStream) {
       var parsedData = _parser.Parse(readStream);
-      var codeGenData = ParsedDataProcessor.Process(parsedData);
+      var codeGenData = PlainBuffersLayoutCalculator.Calculate(parsedData);
 
       using (var writer = new StreamWriter(writeStream)) {
         _generator.Generate(codeGenData, writer);

@@ -5,8 +5,8 @@ using PlainBuffers.CompilerCore.Internal.Data;
 using PlainBuffers.CompilerCore.Parsing.Data;
 
 namespace PlainBuffers.CompilerCore.Internal {
-  internal static class ParsedDataProcessor {
-    public static CodeGenData Process(ParsedData parsedData) {
+  internal static class PlainBuffersLayoutCalculator {
+    public static CodeGenData Calculate(ParsedData parsedData) {
       var index = new ProcessingIndex();
       var codeGenTypes = new CodeGenType[parsedData.Types.Length];
 
