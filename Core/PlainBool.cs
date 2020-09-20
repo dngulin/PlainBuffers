@@ -7,23 +7,23 @@ namespace PlainBuffers.Core {
     private const byte True = 1;
     private const byte False = 0;
 
-    // ReSharper disable once InconsistentNaming
-    public readonly Span<byte> _Buffer;
+    private readonly Span<byte> _buffer;
+    public Span<byte> GetBuffer() => _buffer;
 
     public PlainBool(Span<byte> buffer) {
       if (buffer.Length != Size)
         throw new InvalidOperationException();
 
-      _Buffer = buffer;
+      _buffer = buffer;
     }
 
-    public bool Read() => _Buffer[0] != False;
-    public void Write(bool value) => _Buffer[0] = value ? True : False;
+    public bool Read() => _buffer[0] != False;
+    public void Write(bool value) => _buffer[0] = value ? True : False;
 
-    public void CopyTo(PlainBool other) => _Buffer.CopyTo(other._Buffer);
+    public void CopyTo(PlainBool other) => _buffer.CopyTo(other._buffer);
 
-    public static bool operator ==(PlainBool l, PlainBool r) => l._Buffer.SequenceEqual(r._Buffer);
-    public static bool operator !=(PlainBool l, PlainBool r) => !l._Buffer.SequenceEqual(r._Buffer);
+    public static bool operator ==(PlainBool l, PlainBool r) => l._buffer.SequenceEqual(r._buffer);
+    public static bool operator !=(PlainBool l, PlainBool r) => !l._buffer.SequenceEqual(r._buffer);
 
     public override bool Equals(object obj) => false;
     public override int GetHashCode() => throw new NotSupportedException();

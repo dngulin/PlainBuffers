@@ -59,24 +59,25 @@ namespace PlainBuffers.CompilerCore.Generators {
     }
 
     private static void WriteConstructor(string type, BlockWriter typeBlock) {
-      typeBlock.WriteLine("public readonly Span<byte> _Buffer;");
+      typeBlock.WriteLine("private readonly Span<byte> _buffer;");
+      typeBlock.WriteLine("public Span<byte> GetBuffer() => _buffer;");
 
       typeBlock.WriteLine();
       using (var ctorBlock = typeBlock.Sub($"public {type}(Span<byte> buffer)")) {
         using (var ifBlock = ctorBlock.Sub("if (buffer.Length != Size)")) {
           ifBlock.WriteLine("throw new InvalidOperationException();"); // TODO: message
         }
-        ctorBlock.WriteLine("_Buffer = buffer;");
+        ctorBlock.WriteLine("_buffer = buffer;");
       }
     }
 
     private static void WriteCopyToMethod(string type, BlockWriter typeBlock) {
-      typeBlock.WriteLine($"public void CopyTo({type} other) => _Buffer.CopyTo(other._Buffer);");
+      typeBlock.WriteLine($"public void CopyTo({type} other) => _buffer.CopyTo(other._buffer);");
     }
 
     private static void WriteEqualityOperators(string type, BlockWriter typeBlock) {
-      typeBlock.WriteLine($"public static bool operator ==({type} l, {type} r) => l._Buffer.SequenceEqual(r._Buffer);");
-      typeBlock.WriteLine($"public static bool operator !=({type} l, {type} r) => !l._Buffer.SequenceEqual(r._Buffer);");
+      typeBlock.WriteLine($"public static bool operator ==({type} l, {type} r) => l._buffer.SequenceEqual(r._buffer);");
+      typeBlock.WriteLine($"public static bool operator !=({type} l, {type} r) => !l._buffer.SequenceEqual(r._buffer);");
       typeBlock.WriteLine();
       typeBlock.WriteLine("public override bool Equals(object obj) => false;");
       typeBlock.WriteLine("public override int GetHashCode() => throw new NotSupportedException();");
@@ -111,7 +112,7 @@ namespace PlainBuffers.CompilerCore.Generators {
 
         typeBlock.WriteLine();
         var sizeExpr = arrayType.IsItemTypeEnum ? $"sizeof({itemType})" : $"{itemType}.Size";
-        var sliceExpr = $"_Buffer.Slice({sizeExpr} * index, {sizeExpr})";
+        var sliceExpr = $"_buffer.Slice({sizeExpr} * index, {sizeExpr})";
         typeBlock.WriteLine($"public {itemType} this[int index] => new {itemType}({sliceExpr});");
 
         typeBlock.WriteLine();
@@ -181,7 +182,7 @@ namespace PlainBuffers.CompilerCore.Generators {
             fieldType = field.Type;
 
           var sizeExpr = field.IsFieldTypeEnum ? $"sizeof({fieldType})" : $"{fieldType}.Size";
-          var sliceExpr = $"_Buffer.Slice(_{field.Name}Offset, {sizeExpr})";
+          var sliceExpr = $"_buffer.Slice(_{field.Name}Offset, {sizeExpr})";
           typeBlock.WriteLine($"public {fieldType} {field.Name} => new {fieldType}({sliceExpr});");
         }
 
@@ -197,7 +198,7 @@ namespace PlainBuffers.CompilerCore.Generators {
           }
 
           if (structType.Padding != 0) {
-            wdBlock.WriteLine("_Buffer.Slice(_PaddingStart, _PaddingSize).Fill(0);");
+            wdBlock.WriteLine("_buffer.Slice(_PaddingStart, _PaddingSize).Fill(0);");
           }
         }
 
