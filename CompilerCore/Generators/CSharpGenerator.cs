@@ -193,12 +193,6 @@ namespace PlainBuffers.CompilerCore.Generators {
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {structType.Name}")) {
         typeBlock.WriteLine($"public const int Size = {structType.Size};");
 
-        typeBlock.WriteLine();
-        foreach (var field in structType.Fields) {
-          var fieldName = field.Name;
-          typeBlock.WriteLine($"private const int _{fieldName}Offset = {field.Offset};");
-        }
-
         if (structType.Padding != 0) {
           typeBlock.WriteLine($"private const int _PaddingStart = {structType.PaddingOffset};");
           typeBlock.WriteLine($"private const int _PaddingSize = {structType.Padding};");
@@ -213,7 +207,7 @@ namespace PlainBuffers.CompilerCore.Generators {
             fieldType = field.Type;
 
           var typeExpr = field.IsFieldTypeEnum ? $"_{fieldType}" : fieldType;
-          var sliceExpr = $"_buffer.Slice(_{field.Name}Offset, {typeExpr}.Size)";
+          var sliceExpr = $"_buffer.Slice({field.Offset}, {typeExpr}.Size)";
           typeBlock.WriteLine($"public {typeExpr} {field.Name} => new {typeExpr}({sliceExpr});");
         }
 
