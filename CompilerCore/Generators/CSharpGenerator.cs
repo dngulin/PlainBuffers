@@ -58,7 +58,7 @@ namespace PlainBuffers.CompilerCore.Generators {
       }
     }
 
-    private static void WriteConstructor(string type, BlockWriter typeBlock) {
+    private static void WriteConstructor(string type, BlockWriter typeBlock, string initializer = null) {
       typeBlock.WriteLine("private readonly Span<byte> _buffer;");
       typeBlock.WriteLine("public Span<byte> GetBuffer() => _buffer;");
 
@@ -68,6 +68,9 @@ namespace PlainBuffers.CompilerCore.Generators {
           ifBlock.WriteLine("throw new InvalidOperationException();"); // TODO: message
         }
         ctorBlock.WriteLine("_buffer = buffer;");
+
+        if (initializer != null)
+          ctorBlock.WriteLine(initializer);
       }
     }
 
@@ -97,6 +100,35 @@ namespace PlainBuffers.CompilerCore.Generators {
           typeBlock.WriteLine($"{item.Name}{assignment}{comma}");
         }
       }
+
+      nsBlock.WriteLine();
+      WriteEnumWrapper(enumType, nsBlock);
+    }
+
+    private static void WriteEnumWrapper(CodeGenEnum enumType, BlockWriter nsBlock) {
+      if (!CSharpTypes.TryGetValue(enumType.UnderlyingType, out var pbType))
+        throw new Exception($"Enum `{enumType.Name}` has invalid underlying type `{enumType.UnderlyingType}`");
+
+      var cSharpType = enumType.UnderlyingType;
+      var wrapperType = $"_{enumType.Name}";
+
+      using (var typeBlock = nsBlock.Sub($"public readonly ref struct {wrapperType}")) {
+        typeBlock.WriteLine($"public const int Size = {enumType.Size};");
+        typeBlock.WriteLine($"private readonly {pbType} _primitive;");
+
+        typeBlock.WriteLine();
+        WriteConstructor(wrapperType, typeBlock, $"_primitive = new {pbType}(_buffer);");
+
+        typeBlock.WriteLine();
+        typeBlock.WriteLine($"public {enumType.Name} Read() => ({enumType.Name}) _primitive.Read();");
+        typeBlock.WriteLine($"public void Write({enumType.Name} value) => _primitive.Write(({cSharpType}) value);");
+
+        typeBlock.WriteLine();
+        WriteCopyToMethod(wrapperType, typeBlock);
+
+        typeBlock.WriteLine();
+        WriteEqualityOperators(wrapperType, typeBlock);
+      }
     }
 
     private static void WriteArray(CodeGenArray arrayType, BlockWriter nsBlock) {
@@ -111,8 +143,8 @@ namespace PlainBuffers.CompilerCore.Generators {
           itemType = arrayType.ItemType;
 
         typeBlock.WriteLine();
-        var sizeExpr = arrayType.IsItemTypeEnum ? $"sizeof({itemType})" : $"{itemType}.Size";
-        var sliceExpr = $"_buffer.Slice({sizeExpr} * index, {sizeExpr})";
+        var typeExpr = arrayType.IsItemTypeEnum ? $"_{itemType}" : itemType;
+        var sliceExpr = $"_buffer.Slice({typeExpr}.Size * index, {typeExpr}.Size)";
         typeBlock.WriteLine($"public {itemType} this[int index] => new {itemType}({sliceExpr});");
 
         typeBlock.WriteLine();
@@ -181,9 +213,9 @@ namespace PlainBuffers.CompilerCore.Generators {
           if (!CSharpTypes.TryGetValue(field.Type, out var fieldType))
             fieldType = field.Type;
 
-          var sizeExpr = field.IsFieldTypeEnum ? $"sizeof({fieldType})" : $"{fieldType}.Size";
-          var sliceExpr = $"_buffer.Slice(_{field.Name}Offset, {sizeExpr})";
-          typeBlock.WriteLine($"public {fieldType} {field.Name} => new {fieldType}({sliceExpr});");
+          var typeExpr = field.IsFieldTypeEnum ? $"_{fieldType}" : fieldType;
+          var sliceExpr = $"_buffer.Slice(_{field.Name}Offset, {typeExpr}.Size)";
+          typeBlock.WriteLine($"public {typeExpr} {field.Name} => new {typeExpr}({sliceExpr});");
         }
 
         typeBlock.WriteLine();
