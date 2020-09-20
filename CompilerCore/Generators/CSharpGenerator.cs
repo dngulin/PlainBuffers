@@ -168,7 +168,7 @@ namespace PlainBuffers.CompilerCore.Generators {
         }
 
         if (structType.Padding != 0) {
-          typeBlock.WriteLine($"private const int _PaddingStart = {structType.Size - structType.Padding};");
+          typeBlock.WriteLine($"private const int _PaddingStart = {structType.PaddingOffset};");
           typeBlock.WriteLine($"private const int _PaddingSize = {structType.Padding};");
         }
 

@@ -3,6 +3,8 @@ namespace PlainBuffers.CompilerCore.CodeGen.Data {
     public readonly int Padding;
     public readonly CodeGenField[] Fields;
 
+    public int PaddingOffset => Size - Padding;
+
     public CodeGenStruct(string name, int size, int padding, CodeGenField[] fields) : base(name, size) {
       Padding = padding;
       Fields = fields;
