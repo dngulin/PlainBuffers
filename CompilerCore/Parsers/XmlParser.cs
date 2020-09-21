@@ -67,7 +67,8 @@ namespace PlainBuffers.CompilerCore.Parsers {
         if (knownItemNames.Contains(itemXml.Name))
           throw new Exception($"Enum `{enumXml.Name}` contains more then one item with the name `{itemXml.Name}`");
 
-        // TODO: validate item value syntax
+        if (string.IsNullOrEmpty(itemXml.Value))
+          throw new Exception($"Value of `{enumXml.Name}.{itemXml.Name}` is not defined!");
 
         knownItemNames.Add(itemXml.Name);
         items[i] = new ParsedEnumItem(itemXml.Name, itemXml.Value);
