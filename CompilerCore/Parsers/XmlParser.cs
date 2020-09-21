@@ -87,7 +87,7 @@ namespace PlainBuffers.CompilerCore.Parsers {
       if (!knownTypes.Contains(arrayXml.ItemTypeName))
         throw new Exception($"Unknown item type `{arrayXml.ItemTypeName}` used in the array type `{arrayXml.Name}`");
 
-      var hasDefaultValue = string.IsNullOrEmpty(arrayXml.ItemDefaultValue);
+      var hasDefaultValue = !string.IsNullOrEmpty(arrayXml.ItemDefaultValue);
       if (hasDefaultValue && !SyntaxHelper.IsPrimitive(arrayXml.ItemTypeName))
         throw new Exception($"Default value is set for non-primitive type in the array type `{arrayXml.Name}`");
 
@@ -118,7 +118,7 @@ namespace PlainBuffers.CompilerCore.Parsers {
         if (!knownTypes.Contains(fieldXml.Type))
           throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` has the invalid type `{fieldXml.Type}`");
 
-        var hasDefaultValue = string.IsNullOrEmpty(fieldXml.Default);
+        var hasDefaultValue = !string.IsNullOrEmpty(fieldXml.Default);
         if (hasDefaultValue && !SyntaxHelper.IsPrimitive(fieldXml.Type))
           throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` of the non-primitive type `{fieldXml.Type}`" +
                               $" has the default value `{fieldXml.Default}`");
