@@ -3,13 +3,13 @@ using System.Buffers.Binary;
 
 namespace PlainBuffers.Core {
   public readonly ref struct PlainUInt64 {
-    public const int Size = sizeof(ulong);
+    public const int SizeOf = sizeof(ulong);
 
     private readonly Span<byte> _buffer;
     public Span<byte> GetBuffer() => _buffer;
 
     public PlainUInt64(Span<byte> buffer) {
-      if (buffer.Length != Size)
+      if (buffer.Length != SizeOf)
         throw new InvalidOperationException("Buffer size doesn't match to the struct size!");
 
       _buffer = buffer;

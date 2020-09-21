@@ -2,7 +2,7 @@
 
 namespace PlainBuffers.Core {
   public readonly ref struct PlainBool {
-    public const int Size = sizeof(byte);
+    public const int SizeOf = sizeof(byte);
 
     private const byte True = 1;
     private const byte False = 0;
@@ -11,7 +11,7 @@ namespace PlainBuffers.Core {
     public Span<byte> GetBuffer() => _buffer;
 
     public PlainBool(Span<byte> buffer) {
-      if (buffer.Length != Size)
+      if (buffer.Length != SizeOf)
         throw new InvalidOperationException("Buffer size doesn't match to the struct size!");
 
       _buffer = buffer;

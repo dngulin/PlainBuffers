@@ -67,7 +67,7 @@ namespace PlainBuffers.CompilerCore.Generators {
       typeBlock.WriteLine();
       using (var ctorBlock = typeBlock.Sub($"public {type}(Span<byte> buffer)")) {
         const string msg = "\"Buffer size doesn't match to the struct size!\"";
-        ctorBlock.WriteLine($"if (buffer.Length != Size) throw new InvalidOperationException({msg});");
+        ctorBlock.WriteLine($"if (buffer.Length != SizeOf) throw new InvalidOperationException({msg});");
 
         ctorBlock.WriteLine("_buffer = buffer;");
         if (initializer != null)
@@ -119,7 +119,7 @@ namespace PlainBuffers.CompilerCore.Generators {
       var wrapperType = $"_Plain{enumType.Name}";
 
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {wrapperType}")) {
-        typeBlock.WriteLine($"public const int Size = {enumType.Size};");
+        typeBlock.WriteLine($"public const int SizeOf = {enumType.Size};");
         typeBlock.WriteLine($"private readonly {pbType} _primitive;");
 
         typeBlock.WriteLine();
@@ -141,7 +141,7 @@ namespace PlainBuffers.CompilerCore.Generators {
 
     private static void WriteArray(CodeGenArray arrayType, BlockWriter nsBlock, IReadOnlyDictionary<string, string> typesMap) {
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {arrayType.Name}")) {
-        typeBlock.WriteLine($"public const int Size = {arrayType.Size};");
+        typeBlock.WriteLine($"public const int SizeOf = {arrayType.Size};");
         typeBlock.WriteLine($"public const int Length = {arrayType.Length};");
 
         typeBlock.WriteLine();
@@ -149,7 +149,7 @@ namespace PlainBuffers.CompilerCore.Generators {
         var itemType = GetRealType(arrayType.ItemType, typesMap);
 
         typeBlock.WriteLine();
-        var sliceExpr = $"_buffer.Slice({itemType}.Size * index, {itemType}.Size)";
+        var sliceExpr = $"_buffer.Slice({itemType}.SizeOf * index, {itemType}.SizeOf)";
         typeBlock.WriteLine($"public {itemType} this[int index] => new {itemType}({sliceExpr});");
 
         typeBlock.WriteLine();
@@ -198,7 +198,7 @@ namespace PlainBuffers.CompilerCore.Generators {
 
     private static void WriteStruct(CodeGenStruct structType, BlockWriter nsBlock, IReadOnlyDictionary<string, string> typesMap) {
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {structType.Name}")) {
-        typeBlock.WriteLine($"public const int Size = {structType.Size};");
+        typeBlock.WriteLine($"public const int SizeOf = {structType.Size};");
 
         if (structType.Padding != 0) {
           typeBlock.WriteLine($"private const int _PaddingStart = {structType.PaddingOffset};");
@@ -211,7 +211,7 @@ namespace PlainBuffers.CompilerCore.Generators {
         typeBlock.WriteLine();
         foreach (var field in structType.Fields) {
           var fieldType = GetRealType(field.Type, typesMap);
-          var sliceExpr = $"_buffer.Slice({field.Offset}, {fieldType}.Size)";
+          var sliceExpr = $"_buffer.Slice({field.Offset}, {fieldType}.SizeOf)";
           typeBlock.WriteLine($"public {fieldType} {field.Name} => new {fieldType}({sliceExpr});");
         }
 

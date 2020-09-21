@@ -2,13 +2,13 @@
 
 namespace PlainBuffers.Core {
   public readonly ref struct PlainUInt8 {
-    public const int Size = sizeof(byte);
+    public const int SizeOf = sizeof(byte);
 
     private readonly Span<byte> _buffer;
     public Span<byte> GetBuffer() => _buffer;
 
     public PlainUInt8(Span<byte> buffer) {
-      if (buffer.Length != Size)
+      if (buffer.Length != SizeOf)
         throw new InvalidOperationException("Buffer size doesn't match to the struct size!");
 
       _buffer = buffer;
