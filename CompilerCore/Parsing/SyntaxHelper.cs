@@ -21,8 +21,8 @@ namespace PlainBuffers.CompilerCore.Parsing {
 
     public static bool IsPrimitive(string type) => Primitives.Contains(type);
 
-    public static bool IsInteger(string typeName) {
-      switch (typeName) {
+    public static bool IsInteger(string type) {
+      switch (type) {
         case "sbyte":
         case "byte":
         case "short":
@@ -40,5 +40,23 @@ namespace PlainBuffers.CompilerCore.Parsing {
     public static bool IsNameValid(string name) => !string.IsNullOrEmpty(name) && Regex.IsMatch(name, NameRegex);
 
     public static bool IsDotSeparatedNameValid(string name) => name.Split('.').All(IsNameValid);
+
+    public static bool IsPrimitiveValueValid(string value, string type) {
+      switch (type) {
+        case "bool": return value == "true" || value == "false";
+        case "sbyte": return sbyte.TryParse(value, out _);
+        case "byte": return byte.TryParse(value, out _);
+        case "short": return short.TryParse(value, out _);
+        case "ushort": return ushort.TryParse(value, out _);
+        case "int": return int.TryParse(value, out _);
+        case "uint": return uint.TryParse(value, out _);
+        case "long": return long.TryParse(value, out _);
+        case "ulong": return ulong.TryParse(value, out _);
+        case "float": return float.TryParse(value, out _);
+        case "double": return double.TryParse(value, out _);
+      }
+
+      return false;
+    }
   }
 }

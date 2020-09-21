@@ -68,7 +68,10 @@ namespace PlainBuffers.CompilerCore.Parsers {
           throw new Exception($"Enum `{enumXml.Name}` contains more then one item with the name `{itemXml.Name}`");
 
         if (string.IsNullOrEmpty(itemXml.Value))
-          throw new Exception($"Value of `{enumXml.Name}.{itemXml.Name}` is not defined!");
+          throw new Exception($"Value of `{enumXml.Name}.{itemXml.Name}` is not defined");
+
+        if (!SyntaxHelper.IsPrimitiveValueValid(itemXml.Value, enumXml.UnderlyingType))
+          throw new Exception($"Value of `{enumXml.Name}.{itemXml.Name}` is invalid");
 
         knownItemNames.Add(itemXml.Name);
         items[i] = new ParsedEnumItem(itemXml.Name, itemXml.Value);
@@ -84,7 +87,12 @@ namespace PlainBuffers.CompilerCore.Parsers {
       if (!knownTypes.Contains(arrayXml.ItemTypeName))
         throw new Exception($"Unknown item type `{arrayXml.ItemTypeName}` used in the array type `{arrayXml.Name}`");
 
-      // TODO: validate default value syntax
+      var hasDefaultValue = string.IsNullOrEmpty(arrayXml.ItemDefaultValue);
+      if (hasDefaultValue && !SyntaxHelper.IsPrimitive(arrayXml.ItemTypeName))
+        throw new Exception($"Default value is set for non-primitive type in the array type `{arrayXml.Name}`");
+
+      if (hasDefaultValue && !SyntaxHelper.IsPrimitiveValueValid(arrayXml.ItemDefaultValue, arrayXml.ItemTypeName))
+        throw new Exception($"Invalid default item value is defined for array `{arrayXml.Name}`");
 
       return new ParsedArrayType(arrayXml.Name, arrayXml.ItemTypeName, arrayXml.Length, arrayXml.ItemDefaultValue);
     }
@@ -108,9 +116,16 @@ namespace PlainBuffers.CompilerCore.Parsers {
         knownFieldNames.Add(fieldXml.Name);
 
         if (!knownTypes.Contains(fieldXml.Type))
-          throw new Exception($"Type `{structXml.Name}` has the field `{fieldXml.Name}` of the unknown type `{fieldXml.Type}`");
+          throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` has the invalid type `{fieldXml.Type}`");
 
-        // TODO: validate default value syntax
+        var hasDefaultValue = string.IsNullOrEmpty(fieldXml.Default);
+        if (hasDefaultValue && !SyntaxHelper.IsPrimitive(fieldXml.Type))
+          throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` of the non-primitive type `{fieldXml.Type}`" +
+                              $" has the default value `{fieldXml.Default}`");
+
+        if (hasDefaultValue && !SyntaxHelper.IsPrimitiveValueValid(fieldXml.Default, fieldXml.Type))
+          throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` " +
+                              $"has the invalid default value `{fieldXml.Default}`");
 
         fields[i] = new ParsedField(fieldXml.Type, fieldXml.Name, fieldXml.Default);
       }
