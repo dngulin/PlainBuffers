@@ -55,6 +55,9 @@ namespace PlainBuffers.CompilerCore.Parsers {
       if (!SyntaxHelper.IsInteger(underlyingType))
         throw new Exception($"Enum `{enumXml.Name}` has the wrong underlying type `{underlyingType}`");
 
+      if (enumXml.Items.Length == 0)
+        throw new Exception($"Enum `{enumXml.Name}` is empty. Default value is not assignable");
+
       var knownItemNames = new HashSet<string>();
       var items = new ParsedEnumItem[enumXml.Items.Length];
 
