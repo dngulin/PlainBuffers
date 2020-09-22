@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml.Serialization;
 using PlainBuffers.CompilerCore.Parsers.Xml;
 using PlainBuffers.CompilerCore.Parsing;
@@ -17,7 +18,7 @@ namespace PlainBuffers.CompilerCore.Parsers {
         throw new Exception($"Invalid namespace `{schemaXml.NameSpace}`");
 
       var types = new ParsedType[schemaXml.Types.Length];
-      var knownTypes = new HashSet<string>(SyntaxHelper.Primitives);
+      var index = new ParsingIndex(SyntaxHelper.Primitives);
 
       for (var i = 0; i < schemaXml.Types.Length; i++) {
         var typeXml = schemaXml.Types[i];
@@ -25,32 +26,32 @@ namespace PlainBuffers.CompilerCore.Parsers {
         if (SyntaxHelper.IsPrimitive(typeXml.Name) || !SyntaxHelper.IsNameValid(typeXml.Name))
           throw new Exception($"Invalid type name `{typeXml.Name}`");
 
-        if (knownTypes.Contains(typeXml.Name))
+        if (index.KnownTypes.Contains(typeXml.Name))
           throw new Exception($"Type `{typeXml.Name}` is defined more then once");
 
         ParsedType type;
         switch (typeXml) {
           case EnumXml enumXml:
-            type = HandleEnum(enumXml);
+            type = HandleEnum(enumXml, index);
             break;
           case ArrayXml arrayXml:
-            type = HandleArray(arrayXml, knownTypes);
+            type = HandleArray(arrayXml, index);
             break;
           case StructXml structXml:
-            type = HandleStruct(structXml, knownTypes);
+            type = HandleStruct(structXml, index);
             break;
           default:
             throw new Exception("Internal parsing error: unknown type variant");
         }
 
         types[i] = type;
-        knownTypes.Add(typeXml.Name);
+        index.KnownTypes.Add(typeXml.Name);
       }
 
       return new ParsedData { NameSpace = schemaXml.NameSpace, Types = types };
     }
 
-    private static ParsedEnumType HandleEnum(EnumXml enumXml) {
+    private static ParsedEnumType HandleEnum(EnumXml enumXml, ParsingIndex index) {
       var underlyingType = enumXml.UnderlyingType;
       if (!SyntaxHelper.IsInteger(underlyingType))
         throw new Exception($"Enum `{enumXml.Name}` has the wrong underlying type `{underlyingType}`");
@@ -80,27 +81,25 @@ namespace PlainBuffers.CompilerCore.Parsers {
         items[i] = new ParsedEnumItem(itemXml.Name, itemXml.Value);
       }
 
+      index.EnumValues.Add(enumXml.Name, items.Select(i => i.Name).ToArray());
+
       return new ParsedEnumType(enumXml.Name, underlyingType, enumXml.IsFlags, items);
     }
 
-    private static ParsedArrayType HandleArray(ArrayXml arrayXml, ICollection<string> knownTypes) {
+    private static ParsedArrayType HandleArray(ArrayXml arrayXml, ParsingIndex index) {
       if (arrayXml.Length <= 0)
         throw new Exception($"Array type `{arrayXml.Name}` has the invalid length {arrayXml.Length}");
 
-      if (!knownTypes.Contains(arrayXml.ItemTypeName))
-        throw new Exception($"Unknown item type `{arrayXml.ItemTypeName}` used in the array type `{arrayXml.Name}`");
+      if (!index.KnownTypes.Contains(arrayXml.ItemType))
+        throw new Exception($"Unknown item type `{arrayXml.ItemType}` used in the array type `{arrayXml.Name}`");
 
-      var hasDefaultValue = !string.IsNullOrEmpty(arrayXml.ItemDefaultValue);
-      if (hasDefaultValue && !SyntaxHelper.IsPrimitive(arrayXml.ItemTypeName))
-        throw new Exception($"Default value is set for non-primitive type in the array type `{arrayXml.Name}`");
+      if (arrayXml.ItemDefault != null && !IsValueValid(arrayXml.ItemDefault, arrayXml.ItemType, index))
+        throw new Exception($"Array `{arrayXml.Name}` has invalid default item value `{arrayXml.ItemDefault}`");
 
-      if (hasDefaultValue && !SyntaxHelper.IsPrimitiveValueValid(arrayXml.ItemDefaultValue, arrayXml.ItemTypeName))
-        throw new Exception($"Invalid default item value is defined for array `{arrayXml.Name}`");
-
-      return new ParsedArrayType(arrayXml.Name, arrayXml.ItemTypeName, arrayXml.Length, arrayXml.ItemDefaultValue);
+      return new ParsedArrayType(arrayXml.Name, arrayXml.ItemType, arrayXml.Length, arrayXml.ItemDefault);
     }
 
-    private static ParsedStruct HandleStruct(StructXml structXml, ICollection<string> knownTypes) {
+    private static ParsedStruct HandleStruct(StructXml structXml, ParsingIndex index) {
       if (structXml.Fields.Length <= 0)
         throw new Exception($"Type `{structXml.Name}` is zero-sized");
 
@@ -118,22 +117,27 @@ namespace PlainBuffers.CompilerCore.Parsers {
 
         knownFieldNames.Add(fieldXml.Name);
 
-        if (!knownTypes.Contains(fieldXml.Type))
+        if (!index.KnownTypes.Contains(fieldXml.Type))
           throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` has the invalid type `{fieldXml.Type}`");
 
-        var hasDefaultValue = !string.IsNullOrEmpty(fieldXml.Default);
-        if (hasDefaultValue && !SyntaxHelper.IsPrimitive(fieldXml.Type))
-          throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` of the non-primitive type `{fieldXml.Type}`" +
-                              $" has the default value `{fieldXml.Default}`");
-
-        if (hasDefaultValue && !SyntaxHelper.IsPrimitiveValueValid(fieldXml.Default, fieldXml.Type))
+        if (fieldXml.Default != null && !IsValueValid(fieldXml.Default, fieldXml.Type, index))
           throw new Exception($"Field `{structXml.Name}.{fieldXml.Name}` " +
-                              $"has the invalid default value `{fieldXml.Default}`");
+                              $"has invalid default value `{fieldXml.Default}`");
 
         fields[i] = new ParsedField(fieldXml.Type, fieldXml.Name, fieldXml.Default);
       }
 
       return new ParsedStruct(structXml.Name, fields);
+    }
+
+    private static bool IsValueValid(string value, string type, ParsingIndex index) {
+      if (SyntaxHelper.IsPrimitive(type))
+        return SyntaxHelper.IsPrimitiveValueValid(value, type);
+
+      if (index.EnumValues.TryGetValue(type, out var validValues))
+        return validValues.Contains(value);
+
+      return false;
     }
   }
 }
