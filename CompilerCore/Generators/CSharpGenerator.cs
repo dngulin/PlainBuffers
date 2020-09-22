@@ -212,10 +212,8 @@ namespace PlainBuffers.CompilerCore.Generators {
       using (var typeBlock = nsBlock.Sub($"public readonly ref struct {structType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {structType.Size};");
 
-        if (structType.Padding != 0) {
-          typeBlock.WriteLine($"private const int _PaddingStart = {structType.PaddingOffset};");
-          typeBlock.WriteLine($"private const int _PaddingSize = {structType.Padding};");
-        }
+        if (structType.Padding != 0)
+          typeBlock.WriteLine($"private const int _Padding = {structType.Padding};");
 
         typeBlock.WriteLine();
         WriteConstructor(structType.Name, typeBlock);
@@ -243,7 +241,7 @@ namespace PlainBuffers.CompilerCore.Generators {
           }
 
           if (structType.Padding != 0) {
-            wdBlock.WriteLine("_buffer.Slice(_PaddingStart, _PaddingSize).Fill(0);");
+            wdBlock.WriteLine("_buffer.Slice(SizeOf - _Padding, _Padding).Fill(0);");
           }
         }
 
