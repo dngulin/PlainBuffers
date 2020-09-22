@@ -1,5 +1,5 @@
 namespace PlainBuffers.CompilerCore.Internal.Data {
-  internal readonly struct FieldMemoryInfo {
+  internal class FieldMemoryInfo {
     public readonly int Index;
     public readonly TypeMemoryInfo TypeMemoryInfo;
 

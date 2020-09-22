@@ -8,17 +8,17 @@ using PlainBuffers.CompilerCore.Parsing.Data;
 namespace PlainBuffers.CompilerCore.Internal {
   internal static class PlainBuffersLayoutCalculator {
     private static readonly Dictionary<string, TypeMemoryInfo> TypesMemInfo = new Dictionary<string, TypeMemoryInfo> {
-      {"bool", new TypeMemoryInfo(1)},
-      {"sbyte", new TypeMemoryInfo(1)},
-      {"byte", new TypeMemoryInfo(1)},
-      {"short", new TypeMemoryInfo(2)},
-      {"ushort", new TypeMemoryInfo(2)},
-      {"int", new TypeMemoryInfo(4)},
-      {"uint", new TypeMemoryInfo(4)},
-      {"float", new TypeMemoryInfo(4)},
-      {"long", new TypeMemoryInfo(8)},
-      {"ulong", new TypeMemoryInfo(8)},
-      {"double", new TypeMemoryInfo(8)}
+      {"bool", new TypeMemoryInfo(1, "false")},
+      {"sbyte", new TypeMemoryInfo(1, "0")},
+      {"byte", new TypeMemoryInfo(1, "0")},
+      {"short", new TypeMemoryInfo(2, "0")},
+      {"ushort", new TypeMemoryInfo(2, "0")},
+      {"int", new TypeMemoryInfo(4, "0")},
+      {"uint", new TypeMemoryInfo(4, "0")},
+      {"float", new TypeMemoryInfo(4, "0")},
+      {"long", new TypeMemoryInfo(8, "0")},
+      {"ulong", new TypeMemoryInfo(8, "0")},
+      {"double", new TypeMemoryInfo(8, "0")}
     };
 
     public static CodeGenData Calculate(ParsedData parsedData) {
@@ -53,11 +53,10 @@ namespace PlainBuffers.CompilerCore.Internal {
 
       var items = new CodeGenEnumItem[pdEnum.Items.Length];
       for (var i = 0; i < items.Length; i++) {
-        // TODO: Explicitly define all enum values?
         items[i] = new CodeGenEnumItem(pdEnum.Items[i].Name, pdEnum.Items[i].Value);
       }
 
-      typesMemInfo.Add(pdEnum.Name, new TypeMemoryInfo(memInfo.Size));
+      typesMemInfo.Add(pdEnum.Name, new TypeMemoryInfo(memInfo.Size, items[0].Value));
 
       return new CodeGenEnum(pdEnum.Name, memInfo.Size, pdEnum.UnderlyingType, pdEnum.IsFlags, items);
     }
@@ -67,12 +66,9 @@ namespace PlainBuffers.CompilerCore.Internal {
         throw new Exception($"Unknown item type `{pdArray.ItemType}` of array `{pdArray.Name}`");
 
       var size = itemMemInfo.Size * pdArray.Length;
+      var defaultValue = pdArray.ItemDefaultValue ?? itemMemInfo.DefaultValue;
 
-      // TODO: Set default value for primitive type if it is not parsed
-      var defaultValue = pdArray.ItemDefaultValue;
-
-      typesMemInfo.Add(pdArray.Name, new TypeMemoryInfo(size, itemMemInfo.Alignment));
-
+      typesMemInfo.Add(pdArray.Name, new TypeMemoryInfo(size, itemMemInfo.Alignment, null));
       return new CodeGenArray(pdArray.Name, size, pdArray.ItemType, pdArray.Length, defaultValue);
     }
 
@@ -88,9 +84,7 @@ namespace PlainBuffers.CompilerCore.Internal {
         var (pdFieldIndex, memInfo) = fieldsMemInfo[i];
         var pdField = pdStruct.Fields[pdFieldIndex];
 
-        // TODO: Set default value for primitive type if it is not parsed
-        var defaultValue = pdField.DefaultValue;
-
+        var defaultValue = pdField.DefaultValue ?? memInfo.DefaultValue;
         fields[i] = new CodeGenField(pdField.Type, pdField.Name, defaultValue, offset);
 
         offset += memInfo.Size;
@@ -103,7 +97,7 @@ namespace PlainBuffers.CompilerCore.Internal {
       var padding = reminder == 0 ? 0 : alignment - reminder;
       var size = unalignedSize + padding;
 
-      typesMemInfo.Add(pdStruct.Name, new TypeMemoryInfo(size, alignment));
+      typesMemInfo.Add(pdStruct.Name, new TypeMemoryInfo(size, alignment, null));
 
       return new CodeGenStruct(pdStruct.Name, size, padding, fields);
     }
