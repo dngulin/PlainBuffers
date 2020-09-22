@@ -56,7 +56,7 @@ namespace PlainBuffers.CompilerCore.Internal {
         items[i] = new CodeGenEnumItem(pdEnum.Items[i].Name, pdEnum.Items[i].Value);
       }
 
-      typesMemInfo.Add(pdEnum.Name, new TypeMemoryInfo(memInfo.Size, items[0].Value));
+      typesMemInfo.Add(pdEnum.Name, new TypeMemoryInfo(memInfo.Size, items[0].Name));
 
       return new CodeGenEnum(pdEnum.Name, memInfo.Size, pdEnum.UnderlyingType, pdEnum.IsFlags, items);
     }
