@@ -87,8 +87,18 @@ namespace PlainBuffers.CompilerCore.Generators {
       typeBlock.WriteLine("public override int GetHashCode() => throw new NotSupportedException();");
     }
 
-    private static string GetRealType(string type, IReadOnlyDictionary<string, string> typesMap) {
+    private static string GetCSharpType(string type, IReadOnlyDictionary<string, string> typesMap) {
       return typesMap.TryGetValue(type, out var replacement) ? replacement : type;
+    }
+
+    private static string GetCSharpValue(string defaultValue, string type, IReadOnlyDictionary<string, string> typesMap) {
+      if (CSharpTypes.ContainsKey(type))
+        return defaultValue; // primitive
+
+      if (typesMap.ContainsKey(type))
+        return $"{type}.{defaultValue}"; // enum
+
+      throw new Exception($"Failed to resolve default value for type `{type}`");
     }
 
     private static void WriteEnum(CodeGenEnum enumType, BlockWriter nsBlock, IDictionary<string, string> typesMap) {
@@ -98,11 +108,9 @@ namespace PlainBuffers.CompilerCore.Generators {
       using (var typeBlock = nsBlock.Sub($"public enum {enumType.Name} : {enumType.UnderlyingType}")) {
         for (var i = 0; i < enumType.Items.Length; i++) {
           var item = enumType.Items[i];
-
-          var assignment = !string.IsNullOrEmpty(item.Value) ? $" = {item.Value}" : string.Empty;
           var comma = i < enumType.Items.Length - 1 ? "," : string.Empty;
 
-          typeBlock.WriteLine($"{item.Name}{assignment}{comma}");
+          typeBlock.WriteLine($"{item.Name} = {item.Value}{comma}");
         }
       }
 
@@ -146,25 +154,29 @@ namespace PlainBuffers.CompilerCore.Generators {
 
         typeBlock.WriteLine();
         WriteConstructor(arrayType.Name, typeBlock);
-        var itemType = GetRealType(arrayType.ItemType, typesMap);
+        var cSharpItemType = GetCSharpType(arrayType.ItemType, typesMap);
 
         typeBlock.WriteLine();
-        var sliceExpr = $"_buffer.Slice({itemType}.SizeOf * index, {itemType}.SizeOf)";
-        typeBlock.WriteLine($"public {itemType} this[int index] => new {itemType}({sliceExpr});");
+        var sliceExpr = $"_buffer.Slice({cSharpItemType}.SizeOf * index, {cSharpItemType}.SizeOf)";
+        typeBlock.WriteLine($"public {cSharpItemType} this[int index] => new {cSharpItemType}({sliceExpr});");
 
         typeBlock.WriteLine();
         WriteCopyToMethod(arrayType.Name, typeBlock);
 
-        // TODO: optimize WriteDefault
         typeBlock.WriteLine();
         using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
         using (var forBlock = wdBlock.Sub("for (var i = 0; i < Length; i++)")) {
-          var isPrimitive = !string.IsNullOrEmpty(arrayType.ItemDefaultValue);
-          forBlock.WriteLine(isPrimitive ? $"this[i].Write({arrayType.ItemDefaultValue});" : "this[i].WriteDefault();");
+          if (arrayType.ItemDefaultValue == null) {
+            forBlock.WriteLine("this[i].WriteDefault();");
+          }
+          else {
+            var cSharpValue = GetCSharpValue(arrayType.ItemDefaultValue, arrayType.ItemType, typesMap);
+            forBlock.WriteLine($"this[i].Write({cSharpValue});");
+          }
         }
 
         typeBlock.WriteLine();
-        WriteArrayEnumerator(arrayType.Name, itemType, typeBlock);
+        WriteArrayEnumerator(arrayType.Name, cSharpItemType, typeBlock);
 
         typeBlock.WriteLine();
         WriteEqualityOperators(arrayType.Name, typeBlock);
@@ -210,9 +222,9 @@ namespace PlainBuffers.CompilerCore.Generators {
 
         typeBlock.WriteLine();
         foreach (var field in structType.Fields) {
-          var fieldType = GetRealType(field.Type, typesMap);
-          var sliceExpr = $"_buffer.Slice({field.Offset}, {fieldType}.SizeOf)";
-          typeBlock.WriteLine($"public {fieldType} {field.Name} => new {fieldType}({sliceExpr});");
+          var cSharpFieldType = GetCSharpType(field.Type, typesMap);
+          var sliceExpr = $"_buffer.Slice({field.Offset}, {cSharpFieldType}.SizeOf)";
+          typeBlock.WriteLine($"public {cSharpFieldType} {field.Name} => new {cSharpFieldType}({sliceExpr});");
         }
 
         typeBlock.WriteLine();
@@ -221,9 +233,13 @@ namespace PlainBuffers.CompilerCore.Generators {
         typeBlock.WriteLine();
         using (var wdBlock = typeBlock.Sub("public void WriteDefault()")) {
           foreach (var field in structType.Fields) {
-            wdBlock.WriteLine(string.IsNullOrEmpty(field.DefaultValue)
-              ? $"{field.Name}.WriteDefault();"
-              : $"{field.Name}.Write({field.DefaultValue});");
+            if (field.DefaultValue == null) {
+              wdBlock.WriteLine($"{field.Name}.WriteDefault();");
+            }
+            else {
+              var cSharpValue = GetCSharpValue(field.DefaultValue, field.Type, typesMap);
+              wdBlock.WriteLine($"{field.Name}.Write({cSharpValue});");
+            }
           }
 
           if (structType.Padding != 0) {
