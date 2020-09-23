@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using PlainBuffers.CompilerCore.CodeGen;
 using PlainBuffers.CompilerCore.Internal;
@@ -14,26 +13,26 @@ namespace PlainBuffers.CompilerCore {
       _generator = generator;
     }
 
-    public (bool Success, string[] Errors) Compile(string schemaPath, string generatePath) {
+    public (string[] Errors, string[] Warnings) Compile(string schemaPath, string generatePath) {
       using (var readStream = File.OpenRead(schemaPath))
       using (var writeStream = File.Create(generatePath)) {
         return Compile(readStream, writeStream);
       }
     }
 
-    public (bool Success, string[] Errors) Compile(Stream readStream, Stream writeStream) {
+    public (string[] Errors, string[] Warnings) Compile(Stream readStream, Stream writeStream) {
       var parsedData = _parser.Parse(readStream);
       var codeGenData = PlainBuffersLayoutCalculator.Calculate(parsedData);
 
-      var namingErrors = _generator.NamingChecker.GetNamingErrors(codeGenData);
-      if (namingErrors.Length > 0)
-        return (false, namingErrors);
+      var (errors, warnings) = _generator.NamingChecker.CheckNaming(codeGenData);
+      if (errors.Length > 0)
+        return (errors, warnings);
 
       using (var writer = new StreamWriter(writeStream)) {
         _generator.Generate(codeGenData, writer);
       }
 
-      return (true, Array.Empty<string>());
+      return (errors, warnings);
     }
   }
 }

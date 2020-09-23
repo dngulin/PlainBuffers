@@ -18,11 +18,18 @@ namespace PlainBuffers.Compiler {
       var compiler = new PlainBuffersCompiler(parser, generator);
 
       try {
-        var (success, errorMessages) = compiler.Compile(args[0], args[1]);
-        if (!success) {
+        var (errors, warnings) = compiler.Compile(args[0], args[1]);
+
+        if (warnings.Length > 0) {
+          Console.WriteLine("Naming warnings:");
+          foreach (var message in warnings)
+            Console.WriteLine($"  - {message}");
+        }
+
+        if (errors.Length > 0) {
           Console.WriteLine("Naming errors:");
-          foreach (var errorMessage in errorMessages)
-            Console.WriteLine($"\t- {errorMessage}");
+          foreach (var message in errors)
+            Console.WriteLine($"  - {message}");
 
           return 5;
         }
