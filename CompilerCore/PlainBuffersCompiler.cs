@@ -1,15 +1,17 @@
+using System;
 using System.IO;
 using PlainBuffers.CompilerCore.CodeGen;
-using PlainBuffers.CompilerCore.Internal;
-using PlainBuffers.CompilerCore.Parsing;
+using PlainBuffers.CompilerCore.Layout;
+using PlainBuffers.CompilerCore.Lexer;
+using PlainBuffers.CompilerCore.Parser;
 
 namespace PlainBuffers.CompilerCore {
   public class PlainBuffersCompiler {
-    private readonly IParser _parser;
+    private readonly PlainBuffersLexer _lexer = new PlainBuffersLexer();
+    private readonly PlainBuffersParser _parser = new PlainBuffersParser();
     private readonly IGenerator _generator;
 
-    public PlainBuffersCompiler(IParser parser, IGenerator generator) {
-      _parser = parser;
+    public PlainBuffersCompiler(IGenerator generator) {
       _generator = generator;
     }
 
@@ -21,8 +23,15 @@ namespace PlainBuffers.CompilerCore {
     }
 
     public (string[] Errors, string[] Warnings) Compile(Stream readStream, Stream writeStream) {
-      var parsedData = _parser.Parse(readStream);
-      var codeGenData = PlainBuffersLayoutCalculator.Calculate(parsedData);
+      var lexerResult = _lexer.Read(readStream);
+      if (lexerResult.HasError(out var lexerError))
+        return (new[] {lexerError}, Array.Empty<string>());
+
+      var parserResult = _parser.Parse(lexerResult.Unwrap());
+      if (parserResult.HasError(out var parserError))
+        return (new[] {parserError}, Array.Empty<string>());
+
+      var codeGenData = PlainBuffersLayout.Calculate(parserResult.Unwrap());
 
       var (errors, warnings) = _generator.NamingChecker.CheckNaming(codeGenData);
       if (errors.Length > 0)

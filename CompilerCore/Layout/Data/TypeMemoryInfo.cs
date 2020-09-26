@@ -1,5 +1,5 @@
-namespace PlainBuffers.CompilerCore.Internal.Data {
-  internal class TypeMemoryInfo {
+namespace PlainBuffers.CompilerCore.Layout.Data {
+  internal readonly struct TypeMemoryInfo {
     public readonly int Size;
     public readonly int Alignment;
     public readonly string DefaultValue;

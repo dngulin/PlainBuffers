@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PlainBuffers.CompilerCore.CodeGen.Data;
-using PlainBuffers.CompilerCore.Internal.Data;
-using PlainBuffers.CompilerCore.Parsing.Data;
+using PlainBuffers.CompilerCore.Layout.Data;
+using PlainBuffers.CompilerCore.Parser.Data;
 
-namespace PlainBuffers.CompilerCore.Internal {
-  internal static class PlainBuffersLayoutCalculator {
+namespace PlainBuffers.CompilerCore.Layout {
+  internal static class PlainBuffersLayout {
     private static readonly Dictionary<string, TypeMemoryInfo> TypesMemInfo = new Dictionary<string, TypeMemoryInfo> {
       {"bool", new TypeMemoryInfo(1, "false")},
       {"sbyte", new TypeMemoryInfo(1, "0")},
@@ -28,10 +28,10 @@ namespace PlainBuffers.CompilerCore.Internal {
       for (var i = 0; i < parsedData.Types.Length; i++) {
         CodeGenType codeGenType;
         switch (parsedData.Types[i]) {
-          case ParsedEnumType pdEnum:
+          case ParsedEnum pdEnum:
             codeGenType = HandleEnum(pdEnum, typesMemInfo);
             break;
-          case ParsedArrayType pdArray:
+          case ParsedArray pdArray:
             codeGenType = HandleArray(pdArray, typesMemInfo);
             break;
           case ParsedStruct pdStruct:
@@ -44,10 +44,10 @@ namespace PlainBuffers.CompilerCore.Internal {
         codeGenTypes[i] = codeGenType;
       }
 
-      return new CodeGenData(parsedData.NameSpace, codeGenTypes);
+      return new CodeGenData(parsedData.Namespace, codeGenTypes);
     }
 
-    private static CodeGenEnum HandleEnum(ParsedEnumType pdEnum, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
+    private static CodeGenEnum HandleEnum(ParsedEnum pdEnum, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
       if (!typesMemInfo.TryGetValue(pdEnum.UnderlyingType, out var memInfo))
         throw new Exception($"Invalid base type `{pdEnum.UnderlyingType}` of enum `{pdEnum.Name}`");
 
@@ -61,7 +61,7 @@ namespace PlainBuffers.CompilerCore.Internal {
       return new CodeGenEnum(pdEnum.Name, memInfo.Size, pdEnum.UnderlyingType, pdEnum.IsFlags, items);
     }
 
-    private static CodeGenArray HandleArray(ParsedArrayType pdArray, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
+    private static CodeGenArray HandleArray(ParsedArray pdArray, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
       if (!typesMemInfo.TryGetValue(pdArray.ItemType, out var itemMemInfo))
         throw new Exception($"Unknown item type `{pdArray.ItemType}` of array `{pdArray.Name}`");
 

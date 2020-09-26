@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace PlainBuffers.CompilerCore.Parsing {
-  public static class SyntaxHelper {
+namespace PlainBuffers.CompilerCore.Parser {
+  internal static class ParsingHelper {
     private const string NameRegex = @"^[A-Za-z_][A-Za-z0-9_]*$";
 
     public static readonly string[] Primitives = {
@@ -41,7 +41,7 @@ namespace PlainBuffers.CompilerCore.Parsing {
 
     public static bool IsDotSeparatedNameValid(string name) => name.Split('.').All(IsNameValid);
 
-    public static bool IsPrimitiveValueValid(string value, string type) {
+    public static bool IsPrimitiveValueValid(string type, string value) {
       switch (type) {
         case "bool": return value == "true" || value == "false";
         case "sbyte": return sbyte.TryParse(value, out _);

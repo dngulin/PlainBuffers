@@ -1,5 +1,5 @@
-namespace PlainBuffers.CompilerCore.Parsing.Data {
-  public class ParsedEnumItem {
+namespace PlainBuffers.CompilerCore.Parser.Data {
+  internal class ParsedEnumItem {
     public readonly string Name;
     public readonly string Value;
 

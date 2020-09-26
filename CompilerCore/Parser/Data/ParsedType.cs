@@ -1,5 +1,5 @@
-namespace PlainBuffers.CompilerCore.Parsing.Data {
-  public abstract class ParsedType {
+namespace PlainBuffers.CompilerCore.Parser.Data {
+  internal abstract class ParsedType {
     public readonly string Name;
 
     protected ParsedType(string name) {
