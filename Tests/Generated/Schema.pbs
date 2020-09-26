@@ -1,4 +1,4 @@
-// Only one namespace should be presented in schema
+// Only one namespace should be defined in schema
 namespace PlainBuffers.Tests.Generated {
   enum ColorId : byte {
     Red   = 0; // Enum items should be annotated
