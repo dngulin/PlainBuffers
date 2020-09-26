@@ -52,11 +52,6 @@ namespace PlainBuffers.CompilerCore.Lexer {
       for (var index = offset; index < span.Length; index++) {
         var value = span[index];
 
-        if (value == NewLine) {
-          state.Line++;
-          state.Column = 0;
-        }
-
         var opResult = OpResult.Ok();
         switch (state.CurrentBlock) {
           case LexicalBlock.None:
@@ -78,7 +73,13 @@ namespace PlainBuffers.CompilerCore.Lexer {
         if (opResult.HasError)
           return opResult;
 
-        state.Column++;
+        if (value == NewLine) {
+          state.Line++;
+          state.Column = 0;
+        }
+        else {
+          state.Column++;
+        }
       }
 
       // Move not processed data to buffer start
@@ -163,7 +164,7 @@ namespace PlainBuffers.CompilerCore.Lexer {
         value = Encoding.ASCII.GetString(ptr, strSlice.Length);
       }
 
-      data.Tokens.Enqueue((Token.Identifier, state.Position));
+      data.Tokens.Enqueue((Token.Identifier, new Position(state.Line, state.Column - strSlice.Length)));
       data.Identifiers.Enqueue(value);
     }
 
