@@ -1,9 +1,9 @@
 // Only one namespace should be presented in schema
 namespace PlainBuffers.Tests.Generated {
   enum ColorId : byte {
-    Red = 0; // Enum items should be annotated
+    Red   = 0; // Enum items should be annotated
     Green = 1;
-    Blue = 2;
+    Blue  = 2;
   }
 
   struct Vec {
@@ -16,10 +16,10 @@ namespace PlainBuffers.Tests.Generated {
     float X;
     float Y;
     float Z;
-    float W = 1; // Is good to be Identity by default
+    float W = 1; // It is a good idea to be `Identity` by default
   }
 
-// Array items can have default value too
+  // Array items can have default value too
   array HandleArray5 short[5] = -1;
 
   struct Monster {
