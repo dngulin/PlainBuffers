@@ -68,10 +68,11 @@ namespace PlainBuffers.CompilerCore.Generators {
       typeBlock.WriteLine($"public {type}(byte* ptr) => _ptr = ptr;");
 
       typeBlock.WriteLine();
-      using (var ctorBlock = typeBlock.Sub($"public static {type} CreateSafe(byte* ptr, int bufferSize)")) {
-        const string msg = "\"Buffer size doesn't match to the struct size!\"";
-        ctorBlock.WriteLine($"if (bufferSize != SizeOf) throw new InvalidOperationException({msg});");
-        ctorBlock.WriteLine($"return new {type}(ptr);");
+      using (var ctorBlock = typeBlock.Sub($"public static {type} WrapBuffer(byte* buffer, int bufferSize, int myIndex = 0)")) {
+        const string msg = "\"Buffer size ios too small!\"";
+        ctorBlock.WriteLine("var offset = SizeOf * myIndex;");
+        ctorBlock.WriteLine($"if ((bufferSize - offset) < SizeOf) throw new InvalidOperationException({msg});");
+        ctorBlock.WriteLine($"return new {type}(buffer + offset);");
       }
     }
 

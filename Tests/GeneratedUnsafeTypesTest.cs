@@ -10,13 +10,13 @@ namespace PlainBuffers.Tests {
     public void TestChecksForMatchingSize() {
       Assert.Throws<InvalidOperationException>(() => {
         fixed (byte* buffer = _buffer) {
-          _ = Vec.CreateSafe(buffer, Vec.SizeOf / 2);
+          _ = Vec.WrapBuffer(buffer, Vec.SizeOf / 2);
         }
       });
 
       Assert.Throws<InvalidOperationException>(() => {
         fixed (byte* ptr = _buffer) {
-          _ = HandleArray5.CreateSafe(ptr, HandleArray5.SizeOf / 2);
+          _ = HandleArray5.WrapBuffer(ptr, HandleArray5.SizeOf / 2);
         }
       });
     }
@@ -24,8 +24,8 @@ namespace PlainBuffers.Tests {
     [Fact]
     public void TestQuatStruct() {
       fixed (byte* buffer = _buffer) {
-        var quat1 = Quat.CreateSafe(buffer + Quat.SizeOf * 0, Quat.SizeOf);
-        var quat2 = Quat.CreateSafe(buffer + Quat.SizeOf * 1, Quat.SizeOf);
+        var quat1 = Quat.WrapBuffer(buffer, _buffer.Length);
+        var quat2 = Quat.WrapBuffer(buffer, _buffer.Length, 1);
 
         quat1.X = 1;
         quat1.Y = 2;
@@ -51,7 +51,7 @@ namespace PlainBuffers.Tests {
     [Fact]
     public void TestArray() {
       fixed (byte* buffer = _buffer) {
-        var array = HandleArray5.CreateSafe(buffer + HandleArray5.SizeOf * 0, HandleArray5.SizeOf);
+        var array = HandleArray5.WrapBuffer(buffer, _buffer.Length);
 
         array.WriteDefault();
         foreach (var item in array)
