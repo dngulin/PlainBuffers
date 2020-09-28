@@ -44,9 +44,11 @@ namespace @name.dot.separated {
 - Identifiers started form `@` should be defined by user.
 - Identifiers started from `*` are optional (currently it is only `flags` modifier for enum types).
 
+Only one namespace should be defined in schema.
+
 You can use primitive types for struct fields, array item types and as underlying types of enum (integers only).
 All primitive types are [named same](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types) 
-as in the C# language.
+as in the C# language. But `char`, `decimal` and reference types are not supported.
 
 Enum values should be annotated by numbers. Logical and shift expressions aren't supported now.
 
