@@ -15,8 +15,8 @@ namespace PlainBuffers.Tests {
       });
 
       Assert.Throws<InvalidOperationException>(() => {
-        fixed (byte* ptr = _buffer) {
-          _ = HandleArray5.WrapBuffer(ptr, HandleArray5.SizeOf / 2);
+        fixed (byte* buffer = _buffer) {
+          _ = HandleArray5.WrapBuffer(buffer, HandleArray5.SizeOf / 2);
         }
       });
     }
