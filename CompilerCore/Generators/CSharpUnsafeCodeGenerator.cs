@@ -131,10 +131,22 @@ namespace PlainBuffers.CompilerCore.Generators {
           }
         }
 
-        typeBlock.WriteLine(); // TODO: bounds check, FastAt() for no bounds checking
+        typeBlock.WriteLine();
+        using (var idxBlock = typeBlock.Sub(isValueType ?
+          $"public ref {itemType} this[int index]" :
+          $"public {itemType} this[int index]"))
+        using (var getBlock = idxBlock.Sub("get")) {
+          var itemSize = isValueType ? $"sizeof({itemType})" : $"{itemType}.SizeOf";
+          getBlock.WriteLine($"if (index < 0 || {itemSize} * index >= SizeOf) throw new IndexOutOfRangeException();");
+          getBlock.WriteLine(isValueType
+            ? $"return ref *(({itemType}*)_ptr + index);"
+            : $"return new {itemType}(_ptr);");
+        }
+
+        typeBlock.WriteLine();
         typeBlock.WriteLine(isValueType
-          ? $"public ref {itemType} this[int index] => ref *(({itemType}*)_ptr + index);"
-          : $"public {itemType} this[int index] => new {itemType}(_ptr);");
+          ? $"private ref {itemType} At(int index) => ref *(({itemType}*)_ptr + index);"
+          : $"private {itemType} At(int index) => new {itemType}(_ptr);");
 
         typeBlock.WriteLine();
         WriteArrayEnumerator(arrayType.Name, itemType, typeBlock, isValueType);
@@ -162,8 +174,8 @@ namespace PlainBuffers.CompilerCore.Generators {
         enumeratorBlock.WriteLine();
         enumeratorBlock.WriteLine("public bool MoveNext() => ++_index < Length;");
         enumeratorBlock.WriteLine(itemIsValueType
-          ? $"public ref {item} Current => ref _array[_index];"
-          : $"public {item} Current => _array[_index];");
+          ? $"public ref {item} Current => ref _array.At(_index);"
+          : $"public {item} Current => _array.At(_index);");
 
         enumeratorBlock.WriteLine();
         enumeratorBlock.WriteLine("public void Reset() => _index = -1;");
