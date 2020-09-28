@@ -22,6 +22,7 @@ Currently project is on an early development stage and supports code generation 
 ## TODO
 
 - Add documentation about usage and schema
+- Unify safe and unsafe generated API
 - Measure and optimize performance (reduce slicing, fast primitive types reinterpretation)
 - Write tests for compiler internal code (currently only core library and generated code are covered by tests now)
 - Generate non-wrapping data types serializable into a byte buffer?
