@@ -13,18 +13,26 @@ namespace PlainBuffers.CompilerCore.Generators {
     }
 
     private static readonly HashSet<string> BuiltInTypes = new HashSet<string> {
-      nameof(PlainBool),
-      nameof(PlainInt8),
-      nameof(PlainUInt8),
-      nameof(PlainInt16),
-      nameof(PlainUInt16),
-      nameof(PlainInt32),
-      nameof(PlainUInt32),
-      nameof(PlainFloat),
-      nameof(PlainInt64),
-      nameof(PlainUInt64),
-      nameof(PlainDouble)
+      nameof(PlainInt8), nameof(PlainUInt8), nameof(PlainInt16), nameof(PlainUInt16),
+      nameof(PlainInt32), nameof(PlainUInt32), nameof(PlainInt64), nameof(PlainUInt64),
+      nameof(PlainBool), nameof(PlainFloat), nameof(PlainDouble)
     };
+
+    private static readonly HashSet<string> Keywords = new HashSet<string> {
+      "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const",
+      "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern",
+      "false", "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in", "int", "interface",
+      "internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator", "out", "override", "params",
+      "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc",
+      "static", "string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked",
+      "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
+    };
+
+    private readonly bool _isSafeVariant;
+
+    public CSharpNamingChecker(bool isSafeVariant) {
+      _isSafeVariant = isSafeVariant;
+    }
 
     public (string[] Errors, string[] Warnings) CheckNaming(CodeGenData data) {
       var index = new CheckingIndex();
@@ -33,8 +41,8 @@ namespace PlainBuffers.CompilerCore.Generators {
         CheckTypeName(typeGenInfo.Name, index);
 
         switch (typeGenInfo) {
-          case CodeGenEnum _:
-            index.Enums.Add(typeGenInfo.Name);
+          case CodeGenEnum enumGenInfo:
+            CheckEnum(enumGenInfo, index);
             break;
           case CodeGenArray arrayGenInfo:
             ChekArray(arrayGenInfo, index);
@@ -50,8 +58,11 @@ namespace PlainBuffers.CompilerCore.Generators {
       return (index.Errors.ToArray(), index.Warnings.ToArray());
     }
 
-    private static void CheckTypeName(string type, CheckingIndex index) {
-      if (BuiltInTypes.Contains(type))
+    private void CheckTypeName(string type, CheckingIndex index) {
+      if (Keywords.Contains(type))
+        index.Errors.Add($"Type `{type}` has the same name with a C# keyword");
+
+      if (_isSafeVariant && BuiltInTypes.Contains(type))
         index.Errors.Add($"Type `{type}` has the same name with a built-in type");
 
       if (type == "SizeOf")
@@ -61,17 +72,29 @@ namespace PlainBuffers.CompilerCore.Generators {
         index.Warnings.Add($"Type `{type}` starts with `_`. It can cause name clashes in a generated code");
     }
 
+    private static void CheckEnum(CodeGenEnum enumInfo, CheckingIndex index) {
+      foreach (var item in enumInfo.Items) {
+        if (Keywords.Contains(item.Name))
+          index.Errors.Add($"Enum item `{enumInfo.Name}.{item.Name}` has the same name with a C# keyword");
+      }
+
+      index.Enums.Add(enumInfo.Name);
+    }
+
     private static void ChekArray(CodeGenArray arrayInfo, CheckingIndex index) {
       if (arrayInfo.ItemType == "Length")
         index.Errors.Add($"Type with name `{arrayInfo.ItemType}` can't be stored in an array");
     }
 
-    private static void ChekStruct(CodeGenStruct structInfo, CheckingIndex index) {
+    private void ChekStruct(CodeGenStruct structInfo, CheckingIndex index) {
       foreach (var field in structInfo.Fields) {
+        if (Keywords.Contains(structInfo.Name))
+          index.Errors.Add($"Field `{structInfo.Name}.{field.Name}` has the same name with a C# keyword");
+
         if (field.Name == "SizeOf")
           index.Errors.Add($"Field `{structInfo.Name}.{field.Name}` has forbidden name");
 
-        if (index.Enums.Contains(field.Type) && field.Type == field.Name)
+        if (_isSafeVariant && index.Enums.Contains(field.Type) && field.Type == field.Name)
           index.Errors.Add($"Field `{structInfo.Name}.{field.Name}` can't be named same as the own enum-type");
 
         if (field.Name.StartsWith("_"))

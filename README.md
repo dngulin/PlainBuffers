@@ -73,9 +73,7 @@ It is not provided by unity runtime and can be downloaded from [nuget.org](https
 
 ## TODO
 
-- Unify safe and unsafe generated API
-- Improve name checking for C# (add language keywords, split safe and unsafe naming checkers?)
-- Measure and optimize performance (reduce slicing, fast primitive types reinterpretation)
+- Unify safe and unsafe generated API?
 - Write tests for compiler internal code (currently only core library and generated code are covered by tests now)
 - Generate non-wrapping data types serializable into a byte buffer?
 - Add code generation for languages other then C#
