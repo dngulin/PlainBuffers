@@ -1,9 +1,9 @@
 using System;
-using PlainBuffers.Tests.Generated;
+using PlainBuffers.Tests.GeneratedSafe;
 using Xunit;
 
 namespace PlainBuffers.Tests {
-  public class GeneratedTypesTest {
+  public class SchemaSafeTests {
     private readonly byte[] _buffer = new byte[Monster.SizeOf * 2];
 
     [Fact]

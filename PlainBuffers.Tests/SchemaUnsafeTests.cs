@@ -3,7 +3,7 @@ using PlainBuffers.Tests.GeneratedUnsafe;
 using Xunit;
 
 namespace PlainBuffers.Tests {
-  public unsafe class GeneratedUnsafeTypesTest {
+  public unsafe class SchemaUnsafeTests {
     private readonly byte[] _buffer = new byte[Monster.SizeOf * 2];
 
     [Fact]
