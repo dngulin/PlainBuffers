@@ -15,7 +15,6 @@ arrays have indexers and iterators, `WriteDefault` methods
 - No other FlatBuffers features like JSON serialization, unions, etc
 
 For example see a sample [schema](Tests/Generated/Schema.pbs) and related [generated code](Tests/Generated/Schema.cs).
-Note that a `PlainBuffers.Core` library is required by generated code. It contains wrappers for primitive types.
 
 Currently project is on an early development stage and supports code generation only for the C# language.
 
@@ -72,7 +71,6 @@ It is not provided by unity runtime and can be downloaded from [nuget.org](https
 
 ## TODO
 
-- Drop `Core` library and tests
 - Add flags enum to a sample schema
 - Regular structs generator for C#
 - Generate a `ReverseEndianness` and mention it in the documentation 

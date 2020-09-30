@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using PlainBuffers.CompilerCore.CodeGen;
 using PlainBuffers.CompilerCore.CodeGen.Data;
-using PlainBuffers.Core;
 
 namespace PlainBuffers.CompilerCore.Generators {
   public class CSharpNamingChecker : INamingChecker {
@@ -11,12 +10,6 @@ namespace PlainBuffers.CompilerCore.Generators {
       public readonly List<string> Warnings = new List<string>();
       public readonly HashSet<string> Enums = new HashSet<string>();
     }
-
-    private static readonly HashSet<string> BuiltInTypes = new HashSet<string> {
-      nameof(PlainInt8), nameof(PlainUInt8), nameof(PlainInt16), nameof(PlainUInt16),
-      nameof(PlainInt32), nameof(PlainUInt32), nameof(PlainInt64), nameof(PlainUInt64),
-      nameof(PlainBool), nameof(PlainFloat), nameof(PlainDouble)
-    };
 
     private static readonly HashSet<string> Keywords = new HashSet<string> {
       "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const",
@@ -27,12 +20,6 @@ namespace PlainBuffers.CompilerCore.Generators {
       "static", "string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked",
       "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
     };
-
-    private readonly bool _isSafeVariant;
-
-    public CSharpNamingChecker(bool isSafeVariant) {
-      _isSafeVariant = isSafeVariant;
-    }
 
     public (string[] Errors, string[] Warnings) CheckNaming(CodeGenData data) {
       var index = new CheckingIndex();
@@ -58,12 +45,9 @@ namespace PlainBuffers.CompilerCore.Generators {
       return (index.Errors.ToArray(), index.Warnings.ToArray());
     }
 
-    private void CheckTypeName(string type, CheckingIndex index) {
+    private static void CheckTypeName(string type, CheckingIndex index) {
       if (Keywords.Contains(type))
         index.Errors.Add($"Type `{type}` has the same name with a C# keyword");
-
-      if (_isSafeVariant && BuiltInTypes.Contains(type))
-        index.Errors.Add($"Type `{type}` has the same name with a built-in type");
 
       if (type == "SizeOf")
         index.Errors.Add($"Type name `{type}` is forbidden");
@@ -86,16 +70,13 @@ namespace PlainBuffers.CompilerCore.Generators {
         index.Errors.Add($"Type with name `{arrayInfo.ItemType}` can't be stored in an array");
     }
 
-    private void ChekStruct(CodeGenStruct structInfo, CheckingIndex index) {
+    private static void ChekStruct(CodeGenStruct structInfo, CheckingIndex index) {
       foreach (var field in structInfo.Fields) {
         if (Keywords.Contains(structInfo.Name))
           index.Errors.Add($"Field `{structInfo.Name}.{field.Name}` has the same name with a C# keyword");
 
         if (field.Name == "SizeOf")
           index.Errors.Add($"Field `{structInfo.Name}.{field.Name}` has forbidden name");
-
-        if (_isSafeVariant && index.Enums.Contains(field.Type) && field.Type == field.Name)
-          index.Errors.Add($"Field `{structInfo.Name}.{field.Name}` can't be named same as the own enum-type");
 
         if (field.Name.StartsWith("_"))
           index.Warnings.Add($"Field name `{structInfo.Name}.{field.Name}` starts with `_`. " +
