@@ -11,6 +11,12 @@ namespace PlainBuffers.ErrorHandling {
 
     public bool HasError { get; }
 
+    public bool TryGetError(out TError error) {
+      error = _error;
+      return HasError;
+    }
+
+
     public TError Error {
       get {
         if (!HasError)

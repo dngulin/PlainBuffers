@@ -24,11 +24,11 @@ namespace PlainBuffers {
 
     public (string[] Errors, string[] Warnings) Compile(Stream readStream, Stream writeStream) {
       var lexerResult = _lexer.Read(readStream);
-      if (lexerResult.HasError(out var lexerError))
+      if (lexerResult.TryGetError(out var lexerError))
         return (new[] {lexerError}, Array.Empty<string>());
 
       var parserResult = _parser.Parse(lexerResult.Unwrap());
-      if (parserResult.HasError(out var parserError))
+      if (parserResult.TryGetError(out var parserError))
         return (new[] {parserError}, Array.Empty<string>());
 
       var codeGenData = PlainBuffersLayout.Calculate(parserResult.Unwrap());

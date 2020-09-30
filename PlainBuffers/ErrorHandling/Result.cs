@@ -4,21 +4,31 @@ namespace PlainBuffers.ErrorHandling {
   internal readonly struct Result<TValue, TError> {
     private readonly TValue _value;
     private readonly TError _error;
-    private readonly bool _isError;
 
     private Result(TValue value, TError error, bool isError) {
       _value = value;
       _error = error;
-      _isError = isError;
+      HasError = isError;
     }
 
-    public bool HasError(out TError error) {
+    public bool HasError { get; }
+
+    public bool TryGetError(out TError error) {
       error = _error;
-      return _isError;
+      return HasError;
+    }
+
+    public TError Error {
+      get {
+        if (!HasError)
+          throw new InvalidOperationException();
+
+        return _error;
+      }
     }
 
     public TValue Unwrap() {
-      if (_isError)
+      if (HasError)
         throw new InvalidOperationException();
 
       return _value;
