@@ -14,7 +14,7 @@ arrays have indexers and iterators, `WriteDefault` methods
 - Default values are allowed. FlatBuffers doesn't support it for `struct` types
 - No other FlatBuffers features like JSON serialization, unions, etc
 
-For example see a sample [schema](Tests/Generated/Schema.pbs) and related [generated code](Tests/Generated/Schema.cs).
+For example see a sample [schema](PlainBuffers.Tests/Generated/Schema.pbs) and related [generated code](PlainBuffers.Tests/Generated/Schema.cs).
 
 Currently project is on an early development stage and supports code generation only for the C# language.
 
@@ -60,8 +60,8 @@ Code generated in the _safe_ mode is based on `Span<byte>` type, and have additi
 Code generated in the _unsafe_ mode is pointer-based and fast. But it requires to write some unsafe code for a buffer wrapping.
 It is also dependent on `Span<byte>` type for some API methods.
 
-For example you can compare tests for [safe](Tests/GeneratedTypesTest.cs) and
-[unsafe](Tests/GeneratedUnsafeTypesTest.cs) generated code.
+For example you can compare tests for [safe](PlainBuffers.Tests/GeneratedTypesTest.cs) and
+[unsafe](PlainBuffers.Tests/GeneratedUnsafeTypesTest.cs) generated code.
 
 ## Unity Integration
 
