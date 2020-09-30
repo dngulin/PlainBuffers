@@ -1,14 +1,11 @@
 .idea
 *.DotSettings.user
 
-Core/bin
-Core/obj
+PlainBuffers/bin
+PlainBuffers/obj
 
-CompilerCore/bin
-CompilerCore/obj
+PlainBuffers.Compiler/bin
+PlainBuffers.Compiler/obj
 
-Compiler/bin
-Compiler/obj
-
-Tests/bin
-Tests/obj
+PlainBuffers.Tests/bin
+PlainBuffers.Tests/obj

@@ -1,10 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerCore", "CompilerCore\CompilerCore.csproj", "{86C97A7B-0EC9-496C-B2E1-F827CA4247B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlainBuffers", "PlainBuffers\PlainBuffers.csproj", "{86C97A7B-0EC9-496C-B2E1-F827CA4247B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "Compiler\Compiler.csproj", "{C25E2DB0-32EB-4058-9DB8-646D066AACC4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlainBuffers.Compiler", "PlainBuffers.Compiler\PlainBuffers.Compiler.csproj", "{C25E2DB0-32EB-4058-9DB8-646D066AACC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{C28FC3AA-EFC1-441E-A2CF-A98E813E9946}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlainBuffers.Tests", "PlainBuffers.Tests\PlainBuffers.Tests.csproj", "{C28FC3AA-EFC1-441E-A2CF-A98E813E9946}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
