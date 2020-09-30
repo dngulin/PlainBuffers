@@ -17,15 +17,15 @@ namespace PlainBuffers.Tests {
       var quat1 = new Quat(_buffer.AsSpan(Quat.SizeOf * 0, Quat.SizeOf));
       var quat2 = new Quat(_buffer.AsSpan(Quat.SizeOf * 1, Quat.SizeOf));
 
-      quat1.X.Write(1);
-      quat1.Y.Write(2);
-      quat1.Z.Write(3);
-      quat1.W.Write(4);
+      quat1.X = 1;
+      quat1.Y = 2;
+      quat1.Z = 3;
+      quat1.W = 4;
 
-      Assert.Equal(1, quat1.X.Read());
-      Assert.Equal(2, quat1.Y.Read());
-      Assert.Equal(3, quat1.Z.Read());
-      Assert.Equal(4, quat1.W.Read());
+      Assert.Equal(1, quat1.X);
+      Assert.Equal(2, quat1.Y);
+      Assert.Equal(3, quat1.Z);
+      Assert.Equal(4, quat1.W);
 
       quat1.CopyTo(quat2);
       Assert.True(quat1 == quat2);
@@ -43,15 +43,21 @@ namespace PlainBuffers.Tests {
 
       array.WriteDefault();
       foreach (var item in array)
-        Assert.True(item.Read() == -1);
+        Assert.True(item == -1);
 
       for (short i = 0; i < HandleArray5.Length; i++) {
-        array[i].Write(i);
+        array[i] = i;
       }
 
       for (short i = 0; i < HandleArray5.Length; i++) {
-        Assert.True(array[i].Read() == i);
+        Assert.True(array[i] == i);
       }
+
+      foreach (ref var item in array)
+        item = -2;
+
+      foreach (var item in array)
+        Assert.True(item == -2);
     }
   }
 }

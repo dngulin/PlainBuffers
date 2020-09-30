@@ -68,11 +68,11 @@ namespace PlainBuffers.CompilerCore.Generators {
       typeBlock.WriteLine($"public {type}(byte* ptr) => _ptr = ptr;");
 
       typeBlock.WriteLine();
-      using (var ctorBlock = typeBlock.Sub($"public static {type} WrapBuffer(byte* buffer, int bufferSize, int myIndex = 0)")) {
+      using (var wrapBlock = typeBlock.Sub($"public static {type} WrapBuffer(byte* buffer, int bufferSize, int myIndex = 0)")) {
         const string msg = "\"Buffer size ios too small!\"";
-        ctorBlock.WriteLine("var offset = SizeOf * myIndex;");
-        ctorBlock.WriteLine($"if ((bufferSize - offset) < SizeOf) throw new InvalidOperationException({msg});");
-        ctorBlock.WriteLine($"return new {type}(buffer + offset);");
+        wrapBlock.WriteLine("var offset = SizeOf * myIndex;");
+        wrapBlock.WriteLine($"if ((bufferSize - offset) < SizeOf) throw new InvalidOperationException({msg});");
+        wrapBlock.WriteLine($"return new {type}(buffer + offset);");
       }
     }
 
@@ -136,8 +136,8 @@ namespace PlainBuffers.CompilerCore.Generators {
           $"public ref {itemType} this[int index]" :
           $"public {itemType} this[int index]"))
         using (var getBlock = idxBlock.Sub("get")) {
-          var itemSize = isValueType ? $"sizeof({itemType})" : $"{itemType}.SizeOf";
-          getBlock.WriteLine($"if (index < 0 || {itemSize} * index >= SizeOf) throw new IndexOutOfRangeException();");
+          var sizeExpr = isValueType ? $"sizeof({itemType})" : $"{itemType}.SizeOf";
+          getBlock.WriteLine($"if (index < 0 || {sizeExpr} * index >= SizeOf) throw new IndexOutOfRangeException();");
           getBlock.WriteLine(isValueType
             ? $"return ref *(({itemType}*)_ptr + index);"
             : $"return new {itemType}(_ptr);");

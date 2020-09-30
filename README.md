@@ -56,11 +56,10 @@ Enum values should be annotated by numbers. Logical and shift expressions aren't
 
 There are safe and unsafe modes for C# code generation.
 
-Code generated in the _safe_ mode is based on the `Core` library, 
-have additional bounds checking (slow), and have guaranties about endianness (big endian).
+Code generated in the _safe_ mode is based on `Span<byte>` type, and have additional safety checks.
 
-Code generated in the _unsafe_ mode is pointer-based and not dependent on the `Core` library,
-fast and have more useful API. But it requires to write unsafe code for buffer wrapping and uses local endianness.
+Code generated in the _unsafe_ mode is pointer-based and fast. But it requires to write some unsafe code for a buffer wrapping.
+It is also dependent on `Span<byte>` type for some API methods.
 
 For example you can compare tests for [safe](Tests/GeneratedTypesTest.cs) and
 [unsafe](Tests/GeneratedUnsafeTypesTest.cs) generated code.
@@ -73,7 +72,9 @@ It is not provided by unity runtime and can be downloaded from [nuget.org](https
 
 ## TODO
 
-- Unify safe and unsafe generated API?
+- Drop `Core` library and tests
+- Add flags enum to a sample schema
+- Regular structs generator for C#
+- Generate a `ReverseEndianness` and mention it in the documentation 
 - Write tests for compiler internal code (currently only core library and generated code are covered by tests now)
-- Generate non-wrapping data types serializable into a byte buffer?
 - Add code generation for languages other then C#
