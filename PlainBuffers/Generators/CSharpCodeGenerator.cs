@@ -102,7 +102,7 @@ namespace PlainBuffers.Generators {
     }
 
     private static void WriteArray(CodeGenArray arrayType, in BlockWriter nsBlock, HashSet<string> valueTypes) {
-      using (var typeBlock = nsBlock.Sub($"public readonly unsafe ref struct {arrayType.Name}")) {
+      using (var typeBlock = nsBlock.Sub($"public readonly ref struct {arrayType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {arrayType.Size};");
         typeBlock.WriteLine($"public const int Length = {arrayType.Length};");
 
@@ -171,7 +171,7 @@ namespace PlainBuffers.Generators {
     }
 
     private static void WriteStruct(CodeGenStruct structType, in BlockWriter nsBlock, HashSet<string> valueTypes) {
-      using (var typeBlock = nsBlock.Sub($"public readonly unsafe ref struct {structType.Name}")) {
+      using (var typeBlock = nsBlock.Sub($"public readonly ref struct {structType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {structType.Size};");
 
         if (structType.Padding != 0)
