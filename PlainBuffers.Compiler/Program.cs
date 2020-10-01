@@ -7,6 +7,7 @@ namespace PlainBuffers.Compiler {
   public static class Program {
     private const string CSharp = "csharp";
     private const string CSharpUnsafe = "csharp-unsafe";
+    private const string CSharpFixedBuffers = "csharp-fixed-buffers";
 
     private static int Main(string[] args) {
       if (args.Length != 3) {
@@ -56,6 +57,7 @@ namespace PlainBuffers.Compiler {
       switch (generator) {
         case CSharp: return new CSharpCodeGenerator();
         case CSharpUnsafe: return new CSharpUnsafeCodeGenerator();
+        case CSharpFixedBuffers: return new CSharpFixedBuffersCodeGenerator();
       }
 
       return null;
