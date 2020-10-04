@@ -78,6 +78,6 @@ It is not provided by unity runtime and can be downloaded from [nuget.org](https
 
 ## TODO
 
-- Generate a `ReverseEndianness` and mention it in the documentation 
+- Generate a `ReverseEndianness` methods 
 - Write tests for compiler internal code (currently only core library and generated code are covered by tests now)
 - Add code generation for languages other then the C#
