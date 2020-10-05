@@ -27,7 +27,7 @@ namespace PlainBuffers.Parser {
       return ParsingResult.Ok(index.BuildParsedData());
     }
 
-    private OpResult ParseData(ParserState state, LexerData data, ParsingIndex index) {
+    private static OpResult ParseData(ParserState state, LexerData data, ParsingIndex index) {
       switch (state.CurrentBlock.Type) {
         case ParsingBlockType.None:
           return ParseSchemaData(state, data, index);
@@ -43,16 +43,16 @@ namespace PlainBuffers.Parser {
     }
 
     private static OpResult ParseSchemaData(ParserState state, LexerData data, ParsingIndex index) {
-      if (!TryReadToken(data, Token.Identifier, out _, out var nsId) || nsId != NamespaceId)
+      if (!TryReadToken(data, TokenType.Identifier, out _, out var nsId) || nsId != NamespaceId)
         return OpResult.Fail("Schema does not contain a namespace");
 
-      if (!TryReadToken(data, Token.Identifier, out var nsNamePos, out var nsName))
+      if (!TryReadToken(data, TokenType.Identifier, out var nsNamePos, out var nsName))
         return OpResult.Fail("Namespace name is not defined");
 
       if (!ParsingHelper.IsDotSeparatedNameValid(nsName))
         return OpResult.Fail($"Invalid namespace name `{nsName}` at {nsNamePos}");
 
-      if (!TryReadToken(data, Token.CurlyBraceLeft, out var bracePos, out _))
+      if (!TryReadToken(data, TokenType.CurlyBraceLeft, out var bracePos, out _))
         return OpResult.Fail($"Missing `{{` after namespace declaration at {bracePos}");
 
       state.StartBlock(ParsingBlockType.Namespace, nsName);
@@ -62,19 +62,19 @@ namespace PlainBuffers.Parser {
     }
 
     private static OpResult ParseNamespaceContent(ParserState state, LexerData data, ParsingIndex index) {
-      if (TryReadToken(data, Token.Identifier, out var pos, out var typeId)) {
+      if (TryReadToken(data, TokenType.Identifier, out var pos, out var typeId)) {
         return TryParseType(typeId, pos, state, data, index);
       }
 
-      if (TryReadToken(data, Token.CurlyBraceRight, out _, out _)) {
+      if (TryReadToken(data, TokenType.CurlyBraceRight, out _, out _)) {
         state.EndBlock();
         return data.Tokens.Count == 0 ?
           OpResult.Ok() :
           OpResult.Fail("Schema contains definitions outside of namespace");
       }
 
-      var (t, p) = data.Tokens.Peek();
-      return OpResult.Fail($"Invalid token `{t}` found at {p}");
+      var token = data.Tokens.Peek();
+      return OpResult.Fail($"Invalid token `{token.Type}` found at {token.Position}");
     }
 
     private static OpResult TryParseType(string id, Position p, ParserState state, LexerData data, ParsingIndex index) {
@@ -91,24 +91,24 @@ namespace PlainBuffers.Parser {
     }
 
     private static OpResult TryParseEnum(ParserState state, LexerData data, ParsingIndex index) {
-      if (!TryReadToken(data, Token.Identifier, out var namePos, out var enumName))
+      if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var enumName))
         return OpResult.Fail($"Enum name is not defined at {namePos}");
 
       var validationResult = ValidateTypeName(enumName, namePos, index);
       if (validationResult.HasError)
         return validationResult;
 
-      if (!TryReadToken(data, Token.Colon, out var colonPos, out _))
+      if (!TryReadToken(data, TokenType.Colon, out var colonPos, out _))
         return OpResult.Fail($"Missing : at {colonPos}");
 
-      if (!TryReadToken(data, Token.Identifier, out var undTypePos, out var underlyingType))
+      if (!TryReadToken(data, TokenType.Identifier, out var undTypePos, out var underlyingType))
         return OpResult.Fail($"Missing enum `{enumName}` type definition at {undTypePos}");
 
       if (!ParsingHelper.IsInteger(underlyingType))
         return OpResult.Fail($"Enum `{enumName}` has invalid underlying type `{underlyingType}`");
 
       var isFlags = false;
-      if (TryReadToken(data, Token.Identifier, out var flagsPos, out var keyword)) {
+      if (TryReadToken(data, TokenType.Identifier, out var flagsPos, out var keyword)) {
         if (keyword != FlagsId)
           return OpResult.Fail($"Unknown enum `{enumName}` optional keyword `{keyword}` at {flagsPos}." +
                                " Only `flags` keyword is supported.");
@@ -116,7 +116,7 @@ namespace PlainBuffers.Parser {
         isFlags = true;
       }
 
-      if (!TryReadToken(data, Token.CurlyBraceLeft, out var bracePos, out _))
+      if (!TryReadToken(data, TokenType.CurlyBraceLeft, out var bracePos, out _))
         return OpResult.Fail($"Missing `{{` after enum `{enumName}` declaration at {bracePos}");
 
       state.StartBlock(ParsingBlockType.Enum, enumName);
@@ -128,7 +128,7 @@ namespace PlainBuffers.Parser {
     private static OpResult ParseEnumContent(ParserState state, LexerData data, ParsingIndex index) {
       var enumName = state.CurrentBlock.Name;
 
-      if (TryReadToken(data, Token.CurlyBraceRight, out _, out _)) {
+      if (TryReadToken(data, TokenType.CurlyBraceRight, out _, out _)) {
         state.EndBlock();
         index.EndEnum(enumName);
 
@@ -137,7 +137,7 @@ namespace PlainBuffers.Parser {
           OpResult.Fail($"Enum `{enumName}` is empty. No default value is available");
       }
 
-      if (!TryReadToken(data, Token.Identifier, out var namePos, out var name))
+      if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var name))
         return OpResult.Fail($"");
 
       if (!ParsingHelper.IsNameValid(name))
@@ -146,16 +146,16 @@ namespace PlainBuffers.Parser {
       if (index.IsEnumContainsItem(enumName, name))
         return OpResult.Fail($"Enum item `{enumName}.{name}` is defined second time at {namePos}");
 
-      if (!TryReadToken(data, Token.Assignment, out var assignPos, out _))
+      if (!TryReadToken(data, TokenType.Assignment, out var assignPos, out _))
         return OpResult.Fail($"Missing `=` at {assignPos}");
 
-      if (!TryReadToken(data, Token.Identifier, out var valPos, out var value))
+      if (!TryReadToken(data, TokenType.Identifier, out var valPos, out var value))
         return OpResult.Fail($"Missing enum item `{enumName}.{name}` default value at {valPos}");
 
       if (!IsEnumValueValid(enumName, value, index))
         return OpResult.Fail($"Enum item `{enumName}.{name}` has invalid default value at {valPos}");
 
-      if (!TryReadToken(data, Token.Semicolon, out var semicolonPos, out _))
+      if (!TryReadToken(data, TokenType.Semicolon, out var semicolonPos, out _))
         return OpResult.Fail($"Missing ; at {semicolonPos}");
 
       index.PutEnumItem(enumName, name, value);
@@ -164,23 +164,23 @@ namespace PlainBuffers.Parser {
     }
 
     private static OpResult TryParseArray(LexerData data, ParsingIndex index) {
-      if (!TryReadToken(data, Token.Identifier, out var namePos, out var arrayName))
+      if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var arrayName))
         return OpResult.Fail($"Array name is not defined at {namePos}");
 
       var validationResult = ValidateTypeName(arrayName, namePos, index);
       if (validationResult.HasError)
         return validationResult;
 
-      if (!TryReadToken(data, Token.Identifier, out var typePos, out var itemType))
+      if (!TryReadToken(data, TokenType.Identifier, out var typePos, out var itemType))
         return OpResult.Fail($"Array `{arrayName}` items type is not defined at {typePos}");
 
       if (!IsTypeKnown(itemType, index))
         return OpResult.Fail($"Array `{arrayName}` has unknown items type `{itemType}` at {typePos}");
 
-      if (!TryReadToken(data, Token.SquareBraceLeft, out var lBracePos, out _))
+      if (!TryReadToken(data, TokenType.SquareBraceLeft, out var lBracePos, out _))
         return OpResult.Fail($"Missing [ at {lBracePos}");
 
-      if (!TryReadToken(data, Token.Identifier, out var lengthPos, out var lengthString))
+      if (!TryReadToken(data, TokenType.Identifier, out var lengthPos, out var lengthString))
         return OpResult.Fail($"Array `{arrayName}` length is not defined at {lengthPos}");
 
       if (!int.TryParse(lengthString, out var length))
@@ -189,19 +189,19 @@ namespace PlainBuffers.Parser {
       if (length <= 0)
         return OpResult.Fail($"Array `{arrayName}` has invalid length {length}");
 
-      if (!TryReadToken(data, Token.SquareBraceRight, out var rBracePos, out _))
+      if (!TryReadToken(data, TokenType.SquareBraceRight, out var rBracePos, out _))
         return OpResult.Fail($"Missing ] at {rBracePos}");
 
       string defValue = null;
-      if (TryReadToken(data, Token.Assignment, out _, out _)) {
-        if (!TryReadToken(data, Token.Identifier, out var valuePos, out defValue))
+      if (TryReadToken(data, TokenType.Assignment, out _, out _)) {
+        if (!TryReadToken(data, TokenType.Identifier, out var valuePos, out defValue))
           return OpResult.Fail($"Missing default item value of array `{arrayName}` at {valuePos}");
 
         if (!IsDefaultValueValid(itemType, defValue, index))
           return OpResult.Fail($"Invalid default value `{defValue}` is defined for array `{arrayName}` at {valuePos}");
       }
 
-      if (!TryReadToken(data, Token.Semicolon, out var semicolonPos, out _))
+      if (!TryReadToken(data, TokenType.Semicolon, out var semicolonPos, out _))
         return OpResult.Fail($"Missing ; at {semicolonPos}");
 
       index.PutArray(arrayName, itemType, length, defValue);
@@ -210,14 +210,14 @@ namespace PlainBuffers.Parser {
     }
 
     private static OpResult TryParseStruct(ParserState state, LexerData data, ParsingIndex index) {
-      if (!TryReadToken(data, Token.Identifier, out var namePos, out var structName))
+      if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var structName))
         return OpResult.Fail($"Struct name is not defined at {namePos}");
 
       var validationResult = ValidateTypeName(structName, namePos, index);
       if (validationResult.HasError)
         return validationResult;
 
-      if (!TryReadToken(data, Token.CurlyBraceLeft, out var bracePos, out _))
+      if (!TryReadToken(data, TokenType.CurlyBraceLeft, out var bracePos, out _))
         return OpResult.Fail($"Missing `{{` after struct `{structName}` declaration at {bracePos}");
 
       state.StartBlock(ParsingBlockType.Struct, structName);
@@ -229,7 +229,7 @@ namespace PlainBuffers.Parser {
     private static OpResult ParseStructContent(ParserState state, LexerData data, ParsingIndex index) {
       var structName = state.CurrentBlock.Name;
 
-      if (TryReadToken(data, Token.CurlyBraceRight, out _, out _)) {
+      if (TryReadToken(data, TokenType.CurlyBraceRight, out _, out _)) {
         state.EndBlock();
         index.EndStruct(structName);
 
@@ -238,10 +238,10 @@ namespace PlainBuffers.Parser {
           OpResult.Fail($"Struct `{structName}` is zero-sized");
       }
 
-      if (!TryReadToken(data, Token.Identifier, out var typePos, out var type))
+      if (!TryReadToken(data, TokenType.Identifier, out var typePos, out var type))
         return OpResult.Fail($"Missing field type definition at {typePos}");
 
-      if (!TryReadToken(data, Token.Identifier, out var namePos, out var name))
+      if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var name))
         return OpResult.Fail($"Missing field name definition at {namePos}");
 
       if (!ParsingHelper.IsNameValid(name))
@@ -254,8 +254,8 @@ namespace PlainBuffers.Parser {
         return OpResult.Fail($"Field `{structName}.{name}` has unknown items type `{type}` at {typePos}");
 
       string defaultValue = null;
-      if (TryReadToken(data, Token.Assignment, out _, out _)) {
-        if (!TryReadToken(data, Token.Identifier, out var valuePos, out defaultValue))
+      if (TryReadToken(data, TokenType.Assignment, out _, out _)) {
+        if (!TryReadToken(data, TokenType.Identifier, out var valuePos, out defaultValue))
           return OpResult.Fail($"Missing default value of field `{structName}.{name}` at {valuePos}");
 
         if (!IsDefaultValueValid(type, defaultValue, index))
@@ -263,26 +263,26 @@ namespace PlainBuffers.Parser {
                                $"field `{structName}.{name}` at {valuePos}");
       }
 
-      if (!TryReadToken(data, Token.Semicolon, out var semicolonPos, out _))
+      if (!TryReadToken(data, TokenType.Semicolon, out var semicolonPos, out _))
         return OpResult.Fail($"Missing ; after field `{structName}.{name}` declaration at {semicolonPos}");
 
       index.PutStructField(structName, type, name, defaultValue);
       return OpResult.Ok();
     }
 
-    private static bool TryReadToken(LexerData data, Token token, out Position position, out string identifier) {
-      var (queuedToken, queuedPos) = data.Tokens.Peek();
+    private static bool TryReadToken(LexerData data, TokenType tokenType, out Position position, out string value) {
+      var token = data.Tokens.Peek();
 
-      position = queuedPos;
-      identifier = default;
+      position = token.Position;
+      value = default;
 
-      if (queuedToken != token)
+      if (token.Type != tokenType)
         return false;
 
       data.Tokens.Dequeue();
 
-      if (token == Token.Identifier)
-        identifier = data.Identifiers.Dequeue();
+      if (tokenType == TokenType.Identifier)
+        value = data.Values.Dequeue();
 
       return true;
     }

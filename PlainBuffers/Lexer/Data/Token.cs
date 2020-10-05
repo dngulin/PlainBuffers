@@ -1,12 +1,11 @@
 namespace PlainBuffers.Lexer.Data {
-  internal enum Token {
-    Identifier,
-    Colon,
-    Semicolon,
-    Assignment,
-    CurlyBraceLeft,
-    CurlyBraceRight,
-    SquareBraceLeft,
-    SquareBraceRight
+  internal readonly struct Token {
+    public readonly TokenType Type;
+    public readonly Position Position;
+
+    public Token(TokenType type, Position position) {
+      Type = type;
+      Position = position;
+    }
   }
 }

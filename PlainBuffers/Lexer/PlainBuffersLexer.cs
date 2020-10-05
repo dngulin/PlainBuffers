@@ -11,14 +11,14 @@ namespace PlainBuffers.Lexer {
     private const byte NewLine = (byte) '\n';
     private const byte Slash = (byte) '/';
 
-    private static readonly Dictionary<byte, Token> PrimitiveLexemes = new Dictionary<byte, Token> {
-      {(byte) ':', Token.Colon},
-      {(byte) ';', Token.Semicolon},
-      {(byte) '=', Token.Assignment},
-      {(byte) '{', Token.CurlyBraceLeft},
-      {(byte) '}', Token.CurlyBraceRight},
-      {(byte) '[', Token.SquareBraceLeft},
-      {(byte) ']', Token.SquareBraceRight}
+    private static readonly Dictionary<byte, TokenType> PrimitiveLexemes = new Dictionary<byte, TokenType> {
+      {(byte) ':', TokenType.Colon},
+      {(byte) ';', TokenType.Semicolon},
+      {(byte) '=', TokenType.Assignment},
+      {(byte) '{', TokenType.CurlyBraceLeft},
+      {(byte) '}', TokenType.CurlyBraceRight},
+      {(byte) '[', TokenType.SquareBraceLeft},
+      {(byte) ']', TokenType.SquareBraceRight}
     };
 
     private static readonly HashSet<byte> WhiteSpaces = new HashSet<byte> {(byte) ' ', (byte) '\t', NewLine};
@@ -95,8 +95,8 @@ namespace PlainBuffers.Lexer {
       if (WhiteSpaces.Contains(value))
         return OpResult.Ok();
 
-      if (PrimitiveLexemes.TryGetValue(value, out var token)) {
-        data.Tokens.Enqueue((token, state.Position));
+      if (PrimitiveLexemes.TryGetValue(value, out var tokenType)) {
+        data.Tokens.Enqueue(new Token(tokenType, state.Position));
         return OpResult.Ok();
       }
 
@@ -136,10 +136,10 @@ namespace PlainBuffers.Lexer {
         return OpResult.Ok();
       }
 
-      if (PrimitiveLexemes.TryGetValue(value, out var token)) {
+      if (PrimitiveLexemes.TryGetValue(value, out var tokenType)) {
         EnqueueIdentifier(state, span, index, data);
         EndBlock(state);
-        data.Tokens.Enqueue((token, state.Position));
+        data.Tokens.Enqueue(new Token(tokenType, state.Position));
         return OpResult.Ok();
       }
 
@@ -164,8 +164,8 @@ namespace PlainBuffers.Lexer {
         value = Encoding.ASCII.GetString(ptr, strSlice.Length);
       }
 
-      data.Tokens.Enqueue((Token.Identifier, new Position(state.Line, state.Column - strSlice.Length)));
-      data.Identifiers.Enqueue(value);
+      data.Tokens.Enqueue(new Token(TokenType.Identifier, new Position(state.Line, state.Column - strSlice.Length)));
+      data.Values.Enqueue(value);
     }
 
     private static void StartBlock(LexerState state, LexicalBlock block) {
