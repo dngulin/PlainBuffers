@@ -138,7 +138,7 @@ namespace PlainBuffers.Parser {
       }
 
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var name))
-        return OpResult.Fail($"");
+        return OpResult.Fail($"Failed to read enum name at {namePos}");
 
       if (!ParsingHelper.IsNameValid(name))
         return OpResult.Fail($"Enum item `{enumName}.{name}` has invalid name at {namePos}");
