@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using PlainBuffers.Lexer.Data;
 using ParsingResult = PlainBuffers.ErrorHandling.Result<PlainBuffers.Parser.Data.ParsedData, string>;
@@ -14,6 +15,12 @@ namespace PlainBuffers.Parser {
 
     private const string FlagsId = "flags";
 
+    private readonly Dictionary<string, ExternStructInfo> _externStructs;
+
+    public PlainBuffersParser(ExternStructInfo[] externStructs) {
+      _externStructs = externStructs.ToDictionary(s => s.Name);
+    }
+
     public ParsingResult Parse(LexerData data) {
       var state = new ParserState();
       var index = new ParsingIndex();
@@ -27,7 +34,7 @@ namespace PlainBuffers.Parser {
       return ParsingResult.Ok(index.BuildParsedData());
     }
 
-    private static OpResult ParseData(ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult ParseData(ParserState state, LexerData data, ParsingIndex index) {
       switch (state.CurrentBlock.Type) {
         case ParsingBlockType.None:
           return ParseSchemaData(state, data, index);
@@ -61,7 +68,7 @@ namespace PlainBuffers.Parser {
       return OpResult.Ok();
     }
 
-    private static OpResult ParseNamespaceContent(ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult ParseNamespaceContent(ParserState state, LexerData data, ParsingIndex index) {
       if (TryReadToken(data, TokenType.Identifier, out var pos, out var typeId)) {
         return TryParseType(typeId, pos, state, data, index);
       }
@@ -77,7 +84,7 @@ namespace PlainBuffers.Parser {
       return OpResult.Fail($"Invalid token `{token.Type}` found at {token.Position}");
     }
 
-    private static OpResult TryParseType(string id, Position p, ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult TryParseType(string id, Position p, ParserState state, LexerData data, ParsingIndex index) {
       switch (id) {
         case EnumId:
           return TryParseEnum(state, data, index);
@@ -90,7 +97,7 @@ namespace PlainBuffers.Parser {
       return OpResult.Fail($"Unknown datatype `{id}` declaration at {p}");
     }
 
-    private static OpResult TryParseEnum(ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult TryParseEnum(ParserState state, LexerData data, ParsingIndex index) {
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var enumName))
         return OpResult.Fail($"Enum name is not defined at {namePos}");
 
@@ -163,7 +170,7 @@ namespace PlainBuffers.Parser {
       return OpResult.Ok();
     }
 
-    private static OpResult TryParseArray(LexerData data, ParsingIndex index) {
+    private OpResult TryParseArray(LexerData data, ParsingIndex index) {
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var arrayName))
         return OpResult.Fail($"Array name is not defined at {namePos}");
 
@@ -209,7 +216,7 @@ namespace PlainBuffers.Parser {
       return OpResult.Ok();
     }
 
-    private static OpResult TryParseStruct(ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult TryParseStruct(ParserState state, LexerData data, ParsingIndex index) {
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var structName))
         return OpResult.Fail($"Struct name is not defined at {namePos}");
 
@@ -226,7 +233,7 @@ namespace PlainBuffers.Parser {
       return OpResult.Ok();
     }
 
-    private static OpResult ParseStructContent(ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult ParseStructContent(ParserState state, LexerData data, ParsingIndex index) {
       var structName = state.CurrentBlock.Name;
 
       if (TryReadToken(data, TokenType.CurlyBraceRight, out _, out _)) {
@@ -287,12 +294,15 @@ namespace PlainBuffers.Parser {
       return true;
     }
 
-    private static OpResult ValidateTypeName(string type, Position pos, ParsingIndex index) {
+    private OpResult ValidateTypeName(string type, Position pos, ParsingIndex index) {
       if (!ParsingHelper.IsNameValid(type))
         return OpResult.Fail($"Type `{type}` has invalid name");
 
       if (ParsingHelper.Primitives.Contains(type))
         return OpResult.Fail($"Try to redefine built-in type `{type}` at {pos}");
+
+      if (_externStructs.ContainsKey(type))
+        return OpResult.Fail($"Try to redefine extern struct `{type}` at {pos}");
 
       if (index.ContainsCompletedType(type))
         return OpResult.Fail($"Try to define type `{type}` second time at {pos}");
@@ -304,9 +314,12 @@ namespace PlainBuffers.Parser {
       return ParsingHelper.Primitives.Contains(itemType) || index.ContainsCompletedType(itemType);
     }
 
-    private static bool IsDefaultValueValid(string itemType, string value, ParsingIndex index) {
+    private bool IsDefaultValueValid(string itemType, string value, ParsingIndex index) {
       if (ParsingHelper.IsPrimitive(itemType))
         return ParsingHelper.IsPrimitiveValueValid(itemType, value);
+
+      if (_externStructs.TryGetValue(itemType, out var externStructInfo))
+        return externStructInfo.Values.Contains(value);
 
       if (index.ContainsEnum(itemType))
         return index.IsEnumContainsItem(itemType, value);
