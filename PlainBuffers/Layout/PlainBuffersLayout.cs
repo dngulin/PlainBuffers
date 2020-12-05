@@ -7,7 +7,7 @@ using PlainBuffers.Parser.Data;
 
 namespace PlainBuffers.Layout {
   internal static class PlainBuffersLayout {
-    private static readonly Dictionary<string, TypeMemoryInfo> TypesMemInfo = new Dictionary<string, TypeMemoryInfo> {
+    private static readonly Dictionary<string, TypeMemoryInfo> Primitives = new Dictionary<string, TypeMemoryInfo> {
       {"bool", new TypeMemoryInfo(1, "false")},
       {"sbyte", new TypeMemoryInfo(1, "0")},
       {"byte", new TypeMemoryInfo(1, "0")},
@@ -21,8 +21,13 @@ namespace PlainBuffers.Layout {
       {"double", new TypeMemoryInfo(8, "0")}
     };
 
-    public static CodeGenData Calculate(ParsedData parsedData) {
-      var typesMemInfo = new Dictionary<string, TypeMemoryInfo>(TypesMemInfo);
+    public static CodeGenData Calculate(ParsedData parsedData, ExternStructInfo[] externStructs) {
+      var typesMemInfo = new Dictionary<string, TypeMemoryInfo>(Primitives);
+      foreach (var structInfo in externStructs) {
+        var memInfo = new TypeMemoryInfo(structInfo.Size, structInfo.Alignment, structInfo.Values[0]);
+        typesMemInfo.Add(structInfo.Name, memInfo);
+      }
+
       var codeGenTypes = new CodeGenType[parsedData.Types.Length];
 
       for (var i = 0; i < parsedData.Types.Length; i++) {
