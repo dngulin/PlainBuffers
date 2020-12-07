@@ -5,9 +5,9 @@ using PlainBuffers.Generators;
 
 namespace PlainBuffers.Compiler {
   public static class Program {
-    private const string CSharp = "csharp";
-    private const string CSharpUnsafe = "csharp-unsafe";
-    private const string CSharpFixedBuffers = "csharp-fixed-buffers";
+    private const string CSharpSafeBuffers = "csharp-safe-buffers";
+    private const string CSharpUnsafeBuffers = "csharp-unsafe-buffers";
+    private const string CSharpUnsafeStructs = "csharp-unsafe-structs";
 
     private static int Main(string[] args) {
       if (args.Length != 3) {
@@ -19,7 +19,7 @@ namespace PlainBuffers.Compiler {
       var generator = GetGenerator(genName);
       if (generator == null) {
         Console.WriteLine($"Unknown generator name: {genName}");
-        Console.WriteLine($"Available generators: {CSharp}, {CSharpUnsafe}");
+        Console.WriteLine($"Available generators: {CSharpSafeBuffers}, {CSharpUnsafeBuffers}, {CSharpUnsafeStructs}");
         return 2;
       }
 
@@ -55,9 +55,9 @@ namespace PlainBuffers.Compiler {
 
     private static IGenerator GetGenerator(string generator) {
       switch (generator) {
-        case CSharp: return new CSharpCodeGenerator();
-        case CSharpUnsafe: return new CSharpUnsafeCodeGenerator();
-        case CSharpFixedBuffers: return new CSharpFixedBuffersCodeGenerator();
+        case CSharpSafeBuffers: return new CSharpSafeBuffersGenerator();
+        case CSharpUnsafeBuffers: return new CSharpUnsafeBuffersGenerator();
+        case CSharpUnsafeStructs: return new CSharpUnsafeStructsGenerator();
       }
 
       return null;
