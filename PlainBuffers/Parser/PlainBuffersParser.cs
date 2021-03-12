@@ -310,8 +310,10 @@ namespace PlainBuffers.Parser {
       return OpResult.Ok();
     }
 
-    private static bool IsTypeKnown(string itemType, ParsingIndex index) {
-      return ParsingHelper.Primitives.Contains(itemType) || index.ContainsCompletedType(itemType);
+    private bool IsTypeKnown(string itemType, ParsingIndex index) {
+      return ParsingHelper.Primitives.Contains(itemType) ||
+             _externStructs.ContainsKey(itemType) ||
+             index.ContainsCompletedType(itemType);
     }
 
     private bool IsDefaultValueValid(string itemType, string value, ParsingIndex index) {

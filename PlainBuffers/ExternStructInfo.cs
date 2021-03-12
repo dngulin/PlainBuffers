@@ -17,7 +17,7 @@ namespace PlainBuffers {
       if (alignment <= 0 || alignment > size)
         throw new ArgumentException($"Extern struct {name} has wrong alignment size");
 
-      if (values == null || values.Length == 0)
+      if (values == null)
         throw new ArgumentException($"Possible values list is not set for for extern struct {name}!");
 
       Name = name;

@@ -54,10 +54,11 @@ namespace PlainBuffers.Compiler {
     }
 
     private static IGenerator GetGenerator(string generator) {
+      var namespaces = Array.Empty<string>();
       switch (generator) {
-        case CSharpSafeBuffers: return new CSharpSafeBuffersGenerator();
-        case CSharpUnsafeBuffers: return new CSharpUnsafeBuffersGenerator();
-        case CSharpUnsafeStructs: return new CSharpUnsafeStructsGenerator();
+        case CSharpSafeBuffers: return new CSharpSafeBuffersGenerator(namespaces);
+        case CSharpUnsafeBuffers: return new CSharpUnsafeBuffersGenerator(namespaces);
+        case CSharpUnsafeStructs: return new CSharpUnsafeStructsGenerator(namespaces);
       }
 
       return null;
