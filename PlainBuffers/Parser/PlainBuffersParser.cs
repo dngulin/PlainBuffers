@@ -258,7 +258,7 @@ namespace PlainBuffers.Parser {
         return OpResult.Fail($"Field `{structName}.{name}` is defined second time at {namePos}");
 
       if (!IsTypeKnown(type, index))
-        return OpResult.Fail($"Field `{structName}.{name}` has unknown items type `{type}` at {typePos}");
+        return OpResult.Fail($"Field `{structName}.{name}` has unknown type `{type}` at {typePos}");
 
       string defaultValue = null;
       if (TryReadToken(data, TokenType.Assignment, out _, out _)) {

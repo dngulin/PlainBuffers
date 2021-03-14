@@ -71,14 +71,16 @@ namespace PlainBuffers {
 
           case ParsedArray pArray:
             pArray.Name = RemapTypeName(pArray.Name, mapper.RemapArrayName(pArray.Name), remappedTypes);
+            pArray.ItemType = mapper.RemapMemberType(pArray.ItemType, remappedTypes);
+            pArray.ItemDefaultValue = mapper.RemapMemberDefaultValue(pArray.ItemType, pArray.ItemDefaultValue);
             break;
 
           case ParsedStruct pStruct:
             pStruct.Name = RemapTypeName(pStruct.Name, mapper.RemapStructName(pStruct.Name), remappedTypes);
 
             foreach (var field in pStruct.Fields) {
-              field.Type = mapper.RemapFieldType(field.Type, remappedTypes);
-              field.DefaultValue = mapper.RemapDefaultFieldValue(field.Type, field.DefaultValue);
+              field.Type = mapper.RemapMemberType(field.Type, remappedTypes);
+              field.DefaultValue = mapper.RemapMemberDefaultValue(field.Type, field.DefaultValue);
             }
             break;
         }

@@ -8,7 +8,7 @@ namespace PlainBuffers {
     string RemapArrayName(string arrayName);
     string RemapStructName(string structName);
 
-    string RemapFieldType(string fieldType, Dictionary<string, string> remappedTypes);
-    string RemapDefaultFieldValue(string fieldType, string value);
+    string RemapMemberType(string memberType, Dictionary<string, string> remappedTypes);
+    string RemapMemberDefaultValue(string memberType, string value);
   }
 }
