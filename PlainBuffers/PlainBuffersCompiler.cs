@@ -52,7 +52,7 @@ namespace PlainBuffers {
         return (errors, warnings);
 
       using (var writer = new StreamWriter(writeStream)) {
-        _generator.Generate(codeGenData, writer, _externStructs);
+        _generator.Generate(codeGenData, writer);
       }
 
       return (errors, warnings);

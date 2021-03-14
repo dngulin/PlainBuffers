@@ -1,25 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using PlainBuffers.CodeGen;
 using PlainBuffers.CodeGen.Data;
 
 namespace PlainBuffers.Generators {
   public class CSharpCodeGenerator : IGenerator {
-    protected static readonly HashSet<string> CSharpPrimitives = new HashSet<string> {
-      "bool",
-      "sbyte",
-      "byte",
-      "short",
-      "ushort",
-      "int",
-      "uint",
-      "float",
-      "long",
-      "ulong",
-      "double"
-    };
-
     private const string Indent = "    ";
 
     private readonly string[] _namespaces;
@@ -28,15 +13,12 @@ namespace PlainBuffers.Generators {
 
     public INamingChecker NamingChecker { get; } = new CSharpNamingChecker();
 
-    public void Generate(CodeGenData data, TextWriter writer, ExternStructInfo[] externStructs) {
+    public void Generate(CodeGenData data, TextWriter writer) {
       WriteHeader(writer);
+      writer.WriteLine();
 
       if (_namespaces.Length > 0)
         WriteNamespaces(writer);
-
-      var valueTypes = new HashSet<string>(CSharpPrimitives);
-      foreach (var externStruct in externStructs)
-        valueTypes.Add(externStruct.Name);
 
       writer.WriteLine("#pragma warning disable 649");
       writer.WriteLine();
@@ -46,13 +28,13 @@ namespace PlainBuffers.Generators {
           var typeInfo = data.Types[i];
           switch (typeInfo) {
             case CodeGenEnum enumInfo:
-              WriteEnum(enumInfo, nsBlock, valueTypes);
+              WriteEnum(enumInfo, nsBlock);
               break;
             case CodeGenArray arrayInfo:
-              WriteArray(arrayInfo, nsBlock, valueTypes);
+              WriteArray(arrayInfo, nsBlock);
               break;
             case CodeGenStruct structInfo:
-              WriteStruct(structInfo, nsBlock, valueTypes);
+              WriteStruct(structInfo, nsBlock);
               break;
             default:
               throw new Exception("Unknown data type");
@@ -74,7 +56,6 @@ namespace PlainBuffers.Generators {
 
       writer.WriteLine("using System;");
       writer.WriteLine("using System.Runtime.InteropServices;");
-      writer.WriteLine();
     }
 
     private void WriteNamespaces(TextWriter writer) {
@@ -84,7 +65,7 @@ namespace PlainBuffers.Generators {
       writer.WriteLine();
     }
 
-    protected virtual void WriteEnum(CodeGenEnum enumType, in BlockWriter nsBlock, HashSet<string> valueTypes) {
+    protected virtual void WriteEnum(CodeGenEnum enumType, in BlockWriter nsBlock) {
       if (enumType.IsFlags)
         nsBlock.WriteLine("[Flags]");
 
@@ -96,11 +77,9 @@ namespace PlainBuffers.Generators {
           typeBlock.WriteLine($"{item.Name} = {item.Value}{comma}");
         }
       }
-
-      valueTypes.Add(enumType.Name);
     }
 
-    protected virtual void WriteArray(CodeGenArray arrayType, in BlockWriter nsBlock, HashSet<string> valueTypes) {
+    protected virtual void WriteArray(CodeGenArray arrayType, in BlockWriter nsBlock) {
       using (var typeBlock = nsBlock.Sub($"public unsafe struct {arrayType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {arrayType.Size};");
         typeBlock.WriteLine($"public const int Length = {arrayType.Length};");
@@ -108,7 +87,6 @@ namespace PlainBuffers.Generators {
         typeBlock.WriteLine("private fixed byte _buffer[SizeOf];");
 
         var itemType = arrayType.ItemType;
-        var isValueType = valueTypes.Contains(itemType);
 
         typeBlock.WriteLine();
         using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
@@ -119,8 +97,7 @@ namespace PlainBuffers.Generators {
         typeBlock.WriteLine();
         using (var idxBlock = typeBlock.Sub($"public ref {itemType} this[int index]"))
         using (var getBlock = idxBlock.Sub("get")) {
-          var sizeExpr = isValueType ? $"sizeof({itemType})" : $"{itemType}.SizeOf";
-          getBlock.WriteLine($"if (index < 0 || {sizeExpr} * index >= SizeOf) throw new IndexOutOfRangeException();");
+          getBlock.WriteLine($"if (index < 0 || sizeof({itemType}) * index >= SizeOf) throw new IndexOutOfRangeException();");
           getBlock.WriteLine("return ref At(index);");
         }
 
@@ -164,7 +141,7 @@ namespace PlainBuffers.Generators {
       }
     }
 
-    protected virtual void WriteStruct(CodeGenStruct structType, in BlockWriter nsBlock, HashSet<string> valueTypes) {
+    protected virtual void WriteStruct(CodeGenStruct structType, in BlockWriter nsBlock) {
       nsBlock.WriteLine("[StructLayout(LayoutKind.Explicit)]");
       using (var typeBlock = nsBlock.Sub($"public unsafe struct {structType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {structType.Size};");
@@ -186,11 +163,8 @@ namespace PlainBuffers.Generators {
             PutWriteDefaultLine(wdBlock, field.Name, field.Type, field.DefaultValueInfo);
           }
 
-          if (structType.Padding != 0) {
-            using (var retBlock = wdBlock.Sub("fixed (byte* __ptr = _buffer)")) {
-              retBlock.WriteLine("new Span<byte>(__ptr + (SizeOf - _Padding), _Padding).Fill(0);");
-            }
-          }
+          if (structType.Padding != 0)
+            WritePaddingFiller(wdBlock);
         }
 
         typeBlock.WriteLine();
@@ -210,6 +184,13 @@ namespace PlainBuffers.Generators {
       typeBlock.WriteLine();
       typeBlock.WriteLine($"public override bool Equals(object obj) => obj is {type} casted && this == casted;");
       typeBlock.WriteLine("public override int GetHashCode() => throw new NotSupportedException();");
+    }
+
+    protected virtual void WritePaddingFiller(in BlockWriter writeDefaultBlock)
+    {
+      using (var fxdBlock = writeDefaultBlock.Sub("fixed (byte* __ptr = _buffer)")) {
+        fxdBlock.WriteLine("new Span<byte>(__ptr + (SizeOf - _Padding), _Padding).Fill(0);");
+      }
     }
 
     private static void PutWriteDefaultLine(BlockWriter block, string lhs, string type, in DefaultValueInfo valInfo) {

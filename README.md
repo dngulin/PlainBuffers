@@ -54,14 +54,15 @@ Enum values should be annotated by numbers. Logical and shift expressions aren't
 
 ## C# Safety Limitations
 
-Generated arrays are not absolutely safe. Be careful with _references to array items_ and _iterators_:
+Generated arrays are not absolutely safe. Be careful with **references to array items** and **iterators**:
 ensure that lifetimes of them are shorter then the array lifetime.
 
 ## Unity Integration
 
-All libraries are targeted to NetStandard 2.0 and can be easily integrated into modern unity projects.
-Note that generated code is dependent on the `System.Memory` library.
-It is not provided by unity runtime and can be downloaded from [nuget.org](https://www.nuget.org/packages/System.Memory/).
+PlainBuffers library provides the `CSharpUnityCodeGenerator` class that uses `UnsafeUtility` instead of `Span<T>` and generates code without any external dependencies. 
+
+Compiler library itself are targeted to NetStandard 2.0 and dependent on the `System.Memory` library.
+It can be downloaded from [nuget.org](https://www.nuget.org/packages/System.Memory/) and integrated into unity project.
 
 ## TODO
 

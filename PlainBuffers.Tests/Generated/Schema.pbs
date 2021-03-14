@@ -30,4 +30,6 @@ namespace PlainBuffers.Tests.Generated {
     ColorId Color = Blue;
     HandleArray5 Inventory;
   }
+
+  array Monsters Monster[5];
 }
