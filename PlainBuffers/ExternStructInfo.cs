@@ -41,6 +41,9 @@ namespace PlainBuffers {
 
     public static ExternStructInfo WithEnumeratedValues(string name, int size, int alignment, string[] values)
     {
+      if (values == null || values.Length <= 0)
+        throw new ArgumentException();
+
       return new ExternStructInfo(StructKind.WithEnumeratedValues, name, size, alignment, values);
     }
 
