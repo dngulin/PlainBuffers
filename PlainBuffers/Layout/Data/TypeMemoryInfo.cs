@@ -9,7 +9,7 @@ namespace PlainBuffers.Layout.Data {
     public TypeMemoryInfo(int size, string defaultValue) {
       Size = size;
       Alignment = size;
-      DefaultValueInfo = new DefaultValueInfo(DefaultValueVariant.Assign, defaultValue);
+      DefaultValueInfo = DefaultValueInfo.AssignValue(defaultValue);
     }
 
     public TypeMemoryInfo(int size, int alignment, DefaultValueInfo defaultValueInfo) {

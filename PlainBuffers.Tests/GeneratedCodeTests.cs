@@ -1,4 +1,4 @@
-using PlainBuffers.Tests.GeneratedFixedBuffers;
+using PlainBuffers.Tests.Generated;
 using Xunit;
 
 namespace PlainBuffers.Tests {

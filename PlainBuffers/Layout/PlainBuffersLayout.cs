@@ -23,12 +23,24 @@ namespace PlainBuffers.Layout {
 
     public static CodeGenData Calculate(ParsedData parsedData, ExternStructInfo[] externStructs) {
       var typesMemInfo = new Dictionary<string, TypeMemoryInfo>(Primitives);
-      foreach (var structInfo in externStructs) {
-        var defaultValue = structInfo.Values.Length > 0
-          ? new DefaultValueInfo(DefaultValueVariant.AssignTypeMember, structInfo.Values[0])
-          : new DefaultValueInfo(DefaultValueVariant.Assign, "default");
-
-        typesMemInfo.Add(structInfo.Name, new TypeMemoryInfo(structInfo.Size, structInfo.Alignment, defaultValue));
+      foreach (var structInfo in externStructs)
+      {
+        DefaultValueInfo dvi;
+        switch (structInfo.Kind)
+        {
+          case ExternStructInfo.StructKind.WithoutValues:
+            dvi = DefaultValueInfo.WriteZeroes();
+            break;
+          case ExternStructInfo.StructKind.WithEnumeratedValues:
+            dvi = DefaultValueInfo.AssignTypeMember(structInfo.Values[0]);
+            break;
+          case ExternStructInfo.StructKind.PlainBuffersStruct:
+            dvi = DefaultValueInfo.CallWriteDefaultMethod();
+            break;
+          default:
+            throw new ArgumentOutOfRangeException();
+        }
+        typesMemInfo.Add(structInfo.Name, new TypeMemoryInfo(structInfo.Size, structInfo.Alignment, dvi));
       }
 
       var codeGenTypes = new CodeGenType[parsedData.Types.Length];
@@ -64,7 +76,7 @@ namespace PlainBuffers.Layout {
         items[i] = new CodeGenEnumItem(pdEnum.Items[i].Name, pdEnum.Items[i].Value);
       }
 
-      var defaultValue = new DefaultValueInfo(DefaultValueVariant.AssignTypeMember, pdEnum.Items[0].Value);
+      var defaultValue = DefaultValueInfo.AssignTypeMember(pdEnum.Items[0].Name);
       typesMemInfo.Add(pdEnum.Name, new TypeMemoryInfo(memInfo.Size, memInfo.Size, defaultValue));
 
       return new CodeGenEnum(pdEnum.Name, memInfo.Size, pdEnum.UnderlyingType, pdEnum.IsFlags, items);
@@ -76,10 +88,10 @@ namespace PlainBuffers.Layout {
 
       var size = itemMemInfo.Size * pdArray.Length;
 
-      var arrayDefaultValue = new DefaultValueInfo(DefaultValueVariant.CallInstanceMethod, "WriteDefault");
+      var arrayDefaultValue = DefaultValueInfo.CallWriteDefaultMethod();
       typesMemInfo.Add(pdArray.Name, new TypeMemoryInfo(size, itemMemInfo.Alignment, arrayDefaultValue));
 
-      var itemDefaultValue = itemMemInfo.DefaultValueInfo.WithCustomDefaultValue(pdArray.ItemDefaultValue);
+      var itemDefaultValue = itemMemInfo.DefaultValueInfo.WithCustomDefaultValueIfPossible(pdArray.ItemDefaultValue);
       return new CodeGenArray(pdArray.Name, size, pdArray.ItemType, pdArray.Length, itemDefaultValue);
     }
 
@@ -95,7 +107,7 @@ namespace PlainBuffers.Layout {
         var (pdFieldIndex, memInfo) = fieldsMemInfo[i];
         var pdField = pdStruct.Fields[pdFieldIndex];
 
-        var defaultValue = memInfo.DefaultValueInfo.WithCustomDefaultValue(pdField.DefaultValue);
+        var defaultValue = memInfo.DefaultValueInfo.WithCustomDefaultValueIfPossible(pdField.DefaultValue);
         fields[i] = new CodeGenField(pdField.Type, pdField.Name, defaultValue, offset);
 
         offset += memInfo.Size;
@@ -108,7 +120,7 @@ namespace PlainBuffers.Layout {
       var padding = reminder == 0 ? 0 : alignment - reminder;
       var size = unalignedSize + padding;
 
-      var structDefaultValue = new DefaultValueInfo(DefaultValueVariant.CallInstanceMethod, "WriteDefault");
+      var structDefaultValue = DefaultValueInfo.CallWriteDefaultMethod();
       typesMemInfo.Add(pdStruct.Name, new TypeMemoryInfo(size, alignment, structDefaultValue));
 
       return new CodeGenStruct(pdStruct.Name, size, padding, fields);
