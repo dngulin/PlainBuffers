@@ -4,6 +4,8 @@ namespace PlainBuffers.Parser {
   internal class ParserState {
     private readonly Stack<ParserSubState> _stack = new Stack<ParserSubState>();
 
+    public readonly Dictionary<string, string> RemappedTypes = new Dictionary<string, string>();
+
     public ParserState() {
       _stack.Push(new ParserSubState(ParsingBlockType.None, null));
     }

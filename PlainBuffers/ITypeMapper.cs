@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 namespace PlainBuffers {
-  public interface IRelatedStructMapper {
+  public interface ITypeMapper {
     string RemapNamespace(string ns);
 
     string RemapEnumName(string enumName);

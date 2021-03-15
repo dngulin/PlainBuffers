@@ -4,12 +4,6 @@ using PlainBuffers.Parser.Data;
 
 namespace PlainBuffers.Parser {
   internal class ParsingIndex {
-    private enum TypeKind {
-      Enum,
-      Array,
-      Struct
-    }
-
     private string _namespace;
 
     private readonly List<(TypeKind, string)> _typesOrder;

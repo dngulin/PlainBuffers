@@ -15,9 +15,11 @@ namespace PlainBuffers.Parser {
 
     private const string FlagsId = "flags";
 
+    private readonly ITypeMapper _mapper;
     private readonly Dictionary<string, ExternStructInfo> _externStructs;
 
-    public PlainBuffersParser(ExternStructInfo[] externStructs) {
+    public PlainBuffersParser(ExternStructInfo[] externStructs, ITypeMapper mapper) {
+      _mapper = mapper;
       _externStructs = externStructs.ToDictionary(s => s.Name);
     }
 
@@ -49,12 +51,15 @@ namespace PlainBuffers.Parser {
       }
     }
 
-    private static OpResult ParseSchemaData(ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult ParseSchemaData(ParserState state, LexerData data, ParsingIndex index) {
       if (!TryReadToken(data, TokenType.Identifier, out _, out var nsId) || nsId != NamespaceId)
         return OpResult.Fail("Schema does not contain a namespace");
 
       if (!TryReadToken(data, TokenType.Identifier, out var nsNamePos, out var nsName))
         return OpResult.Fail("Namespace name is not defined");
+
+      if (_mapper != null)
+        nsName = _mapper.RemapNamespace(nsName);
 
       if (!ParsingHelper.IsDotSeparatedNameValid(nsName))
         return OpResult.Fail($"Invalid namespace name `{nsName}` at {nsNamePos}");
@@ -89,7 +94,7 @@ namespace PlainBuffers.Parser {
         case EnumId:
           return TryParseEnum(state, data, index);
         case ArrayId:
-          return TryParseArray(data, index);
+          return TryParseArray(state, data, index);
         case StructId:
           return TryParseStruct(state, data, index);
       }
@@ -100,6 +105,9 @@ namespace PlainBuffers.Parser {
     private OpResult TryParseEnum(ParserState state, LexerData data, ParsingIndex index) {
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var enumName))
         return OpResult.Fail($"Enum name is not defined at {namePos}");
+
+      if (_mapper != null)
+        enumName = _mapper.RemapTypeName(TypeKind.Enum, enumName, state.RemappedTypes);
 
       var validationResult = ValidateTypeName(enumName, namePos, index);
       if (validationResult.HasError)
@@ -170,9 +178,12 @@ namespace PlainBuffers.Parser {
       return OpResult.Ok();
     }
 
-    private OpResult TryParseArray(LexerData data, ParsingIndex index) {
+    private OpResult TryParseArray(ParserState state, LexerData data, ParsingIndex index) {
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var arrayName))
         return OpResult.Fail($"Array name is not defined at {namePos}");
+
+      if (_mapper != null)
+        arrayName = _mapper.RemapTypeName(TypeKind.Array, arrayName, state.RemappedTypes);
 
       var validationResult = ValidateTypeName(arrayName, namePos, index);
       if (validationResult.HasError)
@@ -180,6 +191,9 @@ namespace PlainBuffers.Parser {
 
       if (!TryReadToken(data, TokenType.Identifier, out var typePos, out var itemType))
         return OpResult.Fail($"Array `{arrayName}` items type is not defined at {typePos}");
+
+      if (_mapper != null)
+        itemType = _mapper.RemapMemberType(itemType, state.RemappedTypes);
 
       if (!IsTypeKnown(itemType, index))
         return OpResult.Fail($"Array `{arrayName}` has unknown items type `{itemType}` at {typePos}");
@@ -204,6 +218,9 @@ namespace PlainBuffers.Parser {
         if (!TryReadToken(data, TokenType.Identifier, out var valuePos, out defValue))
           return OpResult.Fail($"Missing default item value of array `{arrayName}` at {valuePos}");
 
+        if (_mapper != null)
+          defValue = _mapper.RemapMemberDefaultValue(itemType, defValue);
+
         if (!IsDefaultValueValid(itemType, defValue, index))
           return OpResult.Fail($"Invalid default value `{defValue}` is defined for array `{arrayName}` at {valuePos}");
       }
@@ -219,6 +236,9 @@ namespace PlainBuffers.Parser {
     private OpResult TryParseStruct(ParserState state, LexerData data, ParsingIndex index) {
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var structName))
         return OpResult.Fail($"Struct name is not defined at {namePos}");
+
+      if (_mapper != null)
+        structName = _mapper.RemapTypeName(TypeKind.Struct, structName, state.RemappedTypes);
 
       var validationResult = ValidateTypeName(structName, namePos, index);
       if (validationResult.HasError)
@@ -248,6 +268,9 @@ namespace PlainBuffers.Parser {
       if (!TryReadToken(data, TokenType.Identifier, out var typePos, out var type))
         return OpResult.Fail($"Missing field type definition at {typePos}");
 
+      if (_mapper != null)
+        type = _mapper.RemapMemberType(type, state.RemappedTypes);
+
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var name))
         return OpResult.Fail($"Missing field name definition at {namePos}");
 
@@ -264,6 +287,9 @@ namespace PlainBuffers.Parser {
       if (TryReadToken(data, TokenType.Assignment, out _, out _)) {
         if (!TryReadToken(data, TokenType.Identifier, out var valuePos, out defaultValue))
           return OpResult.Fail($"Missing default value of field `{structName}.{name}` at {valuePos}");
+
+        if (_mapper != null)
+          defaultValue = _mapper.RemapMemberDefaultValue(type, defaultValue);
 
         if (!IsDefaultValueValid(type, defaultValue, index))
           return OpResult.Fail($"Invalid default value `{defaultValue}` is defined for " +
