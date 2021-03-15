@@ -265,41 +265,41 @@ namespace PlainBuffers.Parser {
           OpResult.Fail($"Struct `{structName}` is zero-sized");
       }
 
-      if (!TryReadToken(data, TokenType.Identifier, out var typePos, out var type))
+      if (!TryReadToken(data, TokenType.Identifier, out var typePos, out var fieldType))
         return OpResult.Fail($"Missing field type definition at {typePos}");
 
       if (_mapper != null)
-        type = _mapper.RemapMemberType(type, state.RemappedTypes);
+        fieldType = _mapper.RemapMemberType(fieldType, state.RemappedTypes);
 
-      if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var name))
+      if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var fieldName))
         return OpResult.Fail($"Missing field name definition at {namePos}");
 
-      if (!ParsingHelper.IsNameValid(name))
-        return OpResult.Fail($"Field `{structName}.{name}` has invalid name at {namePos}");
+      if (!ParsingHelper.IsNameValid(fieldName))
+        return OpResult.Fail($"Field `{structName}.{fieldName}` has invalid name at {namePos}");
 
-      if (index.IsStructContainsField(structName, name))
-        return OpResult.Fail($"Field `{structName}.{name}` is defined second time at {namePos}");
+      if (index.IsStructContainsField(structName, fieldName))
+        return OpResult.Fail($"Field `{structName}.{fieldName}` is defined second time at {namePos}");
 
-      if (!IsTypeKnown(type, index))
-        return OpResult.Fail($"Field `{structName}.{name}` has unknown type `{type}` at {typePos}");
+      if (!IsTypeKnown(fieldType, index))
+        return OpResult.Fail($"Field `{structName}.{fieldName}` has unknown type `{fieldType}` at {typePos}");
 
-      string defaultValue = null;
+      string fieldDefaultValue = null;
       if (TryReadToken(data, TokenType.Assignment, out _, out _)) {
-        if (!TryReadToken(data, TokenType.Identifier, out var valuePos, out defaultValue))
-          return OpResult.Fail($"Missing default value of field `{structName}.{name}` at {valuePos}");
+        if (!TryReadToken(data, TokenType.Identifier, out var valuePos, out fieldDefaultValue))
+          return OpResult.Fail($"Missing default value of field `{structName}.{fieldName}` at {valuePos}");
 
         if (_mapper != null)
-          defaultValue = _mapper.RemapMemberDefaultValue(type, defaultValue);
+          fieldDefaultValue = _mapper.RemapMemberDefaultValue(fieldType, fieldDefaultValue);
 
-        if (!IsDefaultValueValid(type, defaultValue, index))
-          return OpResult.Fail($"Invalid default value `{defaultValue}` is defined for " +
-                               $"field `{structName}.{name}` at {valuePos}");
+        if (!IsDefaultValueValid(fieldType, fieldDefaultValue, index))
+          return OpResult.Fail($"Invalid default value `{fieldDefaultValue}` is defined for " +
+                               $"field `{structName}.{fieldName}` at {valuePos}");
       }
 
       if (!TryReadToken(data, TokenType.Semicolon, out var semicolonPos, out _))
-        return OpResult.Fail($"Missing ; after field `{structName}.{name}` declaration at {semicolonPos}");
+        return OpResult.Fail($"Missing ; after field `{structName}.{fieldName}` declaration at {semicolonPos}");
 
-      index.PutStructField(structName, type, name, defaultValue);
+      index.PutStructField(structName, fieldType, fieldName, fieldDefaultValue);
       return OpResult.Ok();
     }
 
