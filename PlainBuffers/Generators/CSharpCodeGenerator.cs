@@ -174,8 +174,7 @@ namespace PlainBuffers.Generators {
 
     protected virtual void WriteEqualityOperators(string type, in BlockWriter typeBlock) {
       using (var eqBlock = typeBlock.Sub($"public static bool operator ==(in {type} l, in {type} r)")) {
-        eqBlock.WriteLine("fixed (byte* __l = l._buffer)");
-        using (var rFxd = eqBlock.Sub("fixed (byte* __r = r._buffer)")) {
+        using (var rFxd = eqBlock.Sub("fixed (byte* __l = l._buffer, __r = r._buffer)")) {
           rFxd.WriteLine("return new Span<byte>(__l, SizeOf).SequenceEqual(new Span<byte>(__r, SizeOf));");
         }
       }
