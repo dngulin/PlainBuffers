@@ -92,7 +92,7 @@ namespace PlainBuffers.Layout {
       typesMemInfo.Add(pdArray.Name, new TypeMemoryInfo(size, itemMemInfo.Alignment, arrayDefaultValue));
 
       var itemDefaultValue = itemMemInfo.DefaultValueInfo.WithCustomDefaultValueIfPossible(pdArray.ItemDefaultValue);
-      return new CodeGenArray(pdArray.Name, size, pdArray.ItemType, pdArray.Length, itemDefaultValue);
+      return new CodeGenArray(pdArray.Name, size, itemMemInfo.Alignment, pdArray.ItemType, pdArray.Length, itemDefaultValue);
     }
 
     private static CodeGenStruct HandleStruct(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
@@ -123,7 +123,7 @@ namespace PlainBuffers.Layout {
       var structDefaultValue = DefaultValueInfo.CallWriteDefaultMethod();
       typesMemInfo.Add(pdStruct.Name, new TypeMemoryInfo(size, alignment, structDefaultValue));
 
-      return new CodeGenStruct(pdStruct.Name, size, padding, fields);
+      return new CodeGenStruct(pdStruct.Name, size, alignment, padding, fields);
     }
 
     private static FieldMemoryInfo[] GetFieldsMemoryInfo(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {

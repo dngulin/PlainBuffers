@@ -82,6 +82,7 @@ namespace PlainBuffers.Generators {
     protected virtual void WriteArray(CodeGenArray arrayType, in BlockWriter nsBlock) {
       using (var typeBlock = nsBlock.Sub($"public unsafe struct {arrayType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {arrayType.Size};");
+        typeBlock.WriteLine($"public const int AlignmentOf = {arrayType.Alignment};");
         typeBlock.WriteLine($"public const int Length = {arrayType.Length};");
         typeBlock.WriteLine();
         typeBlock.WriteLine("private fixed byte _buffer[SizeOf];");
@@ -145,6 +146,7 @@ namespace PlainBuffers.Generators {
       nsBlock.WriteLine("[StructLayout(LayoutKind.Explicit)]");
       using (var typeBlock = nsBlock.Sub($"public unsafe struct {structType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {structType.Size};");
+        typeBlock.WriteLine($"public const int AlignmentOf = {structType.Alignment};");
 
         if (structType.Padding != 0)
           typeBlock.WriteLine($"private const int _Padding = {structType.Padding};");

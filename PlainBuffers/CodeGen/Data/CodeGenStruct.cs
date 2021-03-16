@@ -3,7 +3,7 @@ namespace PlainBuffers.CodeGen.Data {
     public readonly int Padding;
     public readonly CodeGenField[] Fields;
 
-    public CodeGenStruct(string name, int size, int padding, CodeGenField[] fields) : base(name, size) {
+    public CodeGenStruct(string name, int size, int alignment, int padding, CodeGenField[] fields) : base(name, size, alignment) {
       Padding = padding;
       Fields = fields;
     }
