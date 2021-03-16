@@ -11,6 +11,13 @@ namespace PlainBuffers.Parser {
       return newTypeName;
     }
 
+    public static string RemapMemberType(this ITypeMapper mapper, string memberType, Dictionary<string, string> remappedTypes) {
+      if (remappedTypes.TryGetValue(memberType, out var remappedType))
+        return remappedType;
+
+      return mapper.RemapMemberType(memberType);
+    }
+
     private static string GetRemappedTypeName(this ITypeMapper mapper, TypeKind typeKind, string typeName) {
       switch (typeKind) {
         case TypeKind.Enum: return mapper.RemapEnumName(typeName);

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace PlainBuffers {
   public interface ITypeMapper {
     string RemapNamespace(string ns);
@@ -8,7 +6,7 @@ namespace PlainBuffers {
     string RemapArrayName(string arrayName);
     string RemapStructName(string structName);
 
-    string RemapMemberType(string memberType, Dictionary<string, string> remappedTypes);
+    string RemapMemberType(string memberType);
     string RemapMemberDefaultValue(string memberType, string value);
   }
 }
