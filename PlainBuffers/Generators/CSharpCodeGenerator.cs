@@ -156,7 +156,11 @@ namespace PlainBuffers.Generators {
 
         typeBlock.WriteLine();
         foreach (var field in structType.Fields) {
-          typeBlock.WriteLine($"[FieldOffset({field.Offset})] public {field.Type} {field.Name};");
+          // `bool` is not blittable type, so we need to set format explicitly
+          var isBoolean = field.Type == "bool";
+          var marshalAttribute = isBoolean ? ", MarshalAs(UnmanagedType.U1)" : "";
+
+          typeBlock.WriteLine($"[FieldOffset({field.Offset}){marshalAttribute}] public {field.Type} {field.Name};");
         }
 
         typeBlock.WriteLine();
