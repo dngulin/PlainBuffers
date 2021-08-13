@@ -96,11 +96,7 @@ namespace PlainBuffers.Generators {
         }
 
         typeBlock.WriteLine();
-        using (var idxBlock = typeBlock.Sub($"public ref {itemType} this[int index]"))
-        using (var getBlock = idxBlock.Sub("get")) {
-          getBlock.WriteLine($"if (index < 0 || sizeof({itemType}) * index >= SizeOf) throw new IndexOutOfRangeException();");
-          getBlock.WriteLine("return ref At(index);");
-        }
+        WriteArrayIndexer(typeBlock, itemType);
 
         typeBlock.WriteLine();
         using (var atBlock = typeBlock.Sub($"private ref {itemType} At(int index)")) {
@@ -114,6 +110,15 @@ namespace PlainBuffers.Generators {
 
         typeBlock.WriteLine();
         WriteEqualityOperators(arrayType.Name, typeBlock);
+      }
+    }
+
+    protected virtual void WriteArrayIndexer(BlockWriter typeBlock, string itemType) {
+      using (var idxBlock = typeBlock.Sub($"public ref {itemType} this[int index]"))
+      using (var getBlock = idxBlock.Sub("get")) {
+        getBlock.WriteLine(
+          $"if (index < 0 || sizeof({itemType}) * index >= SizeOf) throw new IndexOutOfRangeException();");
+        getBlock.WriteLine("return ref At(index);");
       }
     }
 
