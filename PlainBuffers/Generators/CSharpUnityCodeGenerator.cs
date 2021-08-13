@@ -12,7 +12,7 @@ namespace PlainBuffers.Generators
     protected override void WriteHeader(TextWriter writer)
     {
       base.WriteHeader(writer);
-      writer.Write("using Unity.Collections.LowLevel.Unsafe;");
+      writer.WriteLine("using Unity.Collections.LowLevel.Unsafe;");
     }
 
     protected override void WriteEqualityOperators(string type, in BlockWriter typeBlock) {
