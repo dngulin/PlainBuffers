@@ -21,7 +21,12 @@ namespace PlainBuffers.Lexer {
       {(byte) ']', TokenType.SquareBraceRight}
     };
 
-    private static readonly HashSet<byte> WhiteSpaces = new HashSet<byte> {(byte) ' ', (byte) '\t', NewLine};
+    private static readonly HashSet<byte> WhiteSpaces = new HashSet<byte> {
+      (byte) ' ',
+      (byte) '\t',
+      (byte) '\r',
+      NewLine
+    };
 
     private byte[] _buffer = new byte[1024];
 
