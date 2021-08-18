@@ -7,7 +7,7 @@ The idea of the library is similar to [FlatBuffers](https://github.com/google/fl
 but PlainBuffers are designed for usage in data oriented designs.
 Main differences from FlatBuffers:
 - PlainBuffers allows you to work with regular structures.
-There aren't weird `Mutate`-methods, but there are normal getters, setters, indexers and iterators.
+There aren't weird `Mutate`-methods, but there are usual struct fields. But it is still a bit tricky with array accessors (see C# Generated Arrays Limitations).
 - PlainBuffers doesn't have structure size limitations. FlatBuffers' 64KB limit can cause troubles in some cases.
 - PlainBuffers allows you to set default values for structure fields. Use the `WriteDefault` method to write them.
 - PlainBuffers does an automatic memory layout optimization to reduce paddings.
@@ -52,10 +52,15 @@ as in the C# language. But `char`, `decimal` and reference types are not support
 
 Enum values should be annotated by numbers. Logical and shift expressions aren't supported now.
 
-## C# Safety Limitations
+## C# Generated Arrays Limitations
 
 Generated arrays are not absolutely safe. Be careful with **references to array items** and **iterators**:
 ensure that lifetimes of them are shorter then the array lifetime.
+
+Since the 2.0.0 version, array indexers were removed because they can produce defensive copies when the array accessed by readonly reference.
+Instead of them you should use `RefAt` and `RefReadonlyAt` extension methods depending on access type.
+To get iterators you should use extension methods `RefIter` and `RefReadonlyIter`.
+See usage examples in [tests](PlainBuffers.Tests/GeneratedCodeTests.cs).
 
 ## Unity Integration
 
