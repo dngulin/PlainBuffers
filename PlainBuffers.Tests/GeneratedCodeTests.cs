@@ -2,7 +2,7 @@ using PlainBuffers.Tests.Generated;
 using Xunit;
 
 namespace PlainBuffers.Tests {
-  public class SchemaFixedBuffersTests {
+  public class GeneratedCodeTests {
     [Fact]
     public void TestQuatStruct() {
       var quat1 = new Quat {X = 1, Y = 2, Z = 3, W = 4};
@@ -27,21 +27,23 @@ namespace PlainBuffers.Tests {
       var array = new HandleArray5();
 
       array.WriteDefault();
-      foreach (var item in array)
+      foreach (var item in array.RefReadonlyIter())
         Assert.True(item == -1);
 
       for (short i = 0; i < HandleArray5.Length; i++) {
-        array[i] = i;
+        array.RefAt(i) = i;
       }
+
+      Assert.True(array.Item3 == 3);
 
       for (short i = 0; i < HandleArray5.Length; i++) {
-        Assert.True(array[i] == i);
+        Assert.True(array.RefReadonlyAt(i) == i);
       }
 
-      foreach (ref var item in array)
+      foreach (ref var item in array.RefIter())
         item = -2;
 
-      foreach (var item in array)
+      foreach (ref readonly var item in array.RefReadonlyIter())
         Assert.True(item == -2);
     }
   }

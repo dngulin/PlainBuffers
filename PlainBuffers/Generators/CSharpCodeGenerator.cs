@@ -80,71 +80,131 @@ namespace PlainBuffers.Generators {
     }
 
     protected virtual void WriteArray(CodeGenArray arrayType, in BlockWriter nsBlock) {
+      nsBlock.WriteLine("[StructLayout(LayoutKind.Explicit)]");
       using (var typeBlock = nsBlock.Sub($"public unsafe struct {arrayType.Name}")) {
         typeBlock.WriteLine($"public const int SizeOf = {arrayType.Size};");
         typeBlock.WriteLine($"public const int AlignmentOf = {arrayType.Alignment};");
         typeBlock.WriteLine($"public const int Length = {arrayType.Length};");
-        typeBlock.WriteLine();
-        typeBlock.WriteLine("private fixed byte _buffer[SizeOf];");
 
-        var itemType = arrayType.ItemType;
+        typeBlock.WriteLine();
+        typeBlock.WriteLine("[FieldOffset(0)] private fixed byte _buffer[SizeOf];");
+
+        typeBlock.WriteLine();
+        var itemSize = arrayType.Size / arrayType.Length;
+        for (var i = 0; i < arrayType.Length; i++)
+          WriteField(typeBlock, i * itemSize, arrayType.ItemType, $"Item{i}");
+
+        typeBlock.WriteLine();
+        using (var atBlock = typeBlock.Sub($"private ref {arrayType.ItemType} ItemRef(int index)"))
+        using (var ptrBlock = atBlock.Sub("fixed (byte* ptr = _buffer)")) {
+          ptrBlock.WriteLine($"return ref *(({arrayType.ItemType}*)ptr + index);");
+        }
 
         typeBlock.WriteLine();
         using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
         using (var forBlock = wdBlock.Sub("for (var i = 0; i < Length; i++)")) {
-          PutWriteDefaultLine(forBlock, "this[i]", itemType, arrayType.ItemDefaultValueInfo);
+          PutWriteDefaultLine(forBlock, "ItemRef(i)", arrayType.ItemType, arrayType.ItemDefaultValueInfo);
         }
-
-        typeBlock.WriteLine();
-        WriteArrayIndexer(typeBlock, itemType);
-
-        typeBlock.WriteLine();
-        using (var atBlock = typeBlock.Sub($"private ref {itemType} At(int index)")) {
-          using (var retBlock = atBlock.Sub("fixed (byte* __ptr = _buffer)")) {
-            retBlock.WriteLine($"return ref *(({itemType}*)__ptr + index);");
-          }
-        }
-
-        typeBlock.WriteLine();
-        WriteArrayEnumerator(arrayType.Name, itemType, typeBlock);
 
         typeBlock.WriteLine();
         WriteEqualityOperators(arrayType.Name, typeBlock);
+
+        typeBlock.WriteLine();
+        WriteArrayIterator(typeBlock, arrayType, true);
+        typeBlock.WriteLine();
+        WriteArrayIterator(typeBlock, arrayType, false);
+        typeBlock.WriteLine();
+        WriteArrayEnumerator(typeBlock, arrayType, true);
+        typeBlock.WriteLine();
+        WriteArrayEnumerator(typeBlock, arrayType, false);
+      }
+
+      nsBlock.WriteLine();
+      WriteArrayIndexingExtensions(nsBlock, arrayType);
+    }
+
+    private static string GetRefAcessorPrefix(bool mutable) => mutable ? "Ref" : "RefReadonly";
+    protected virtual string GetArrayIteratorTypeName(bool mutable) => $"{GetRefAcessorPrefix(mutable)}Iterator";
+    protected virtual string GetArrayEnumeratorTypeName(bool mutable) => $"{GetRefAcessorPrefix(mutable)}Enumerator";
+
+    protected virtual string GetArrayIndexExtensionsTypeName(string arrayTypeName) {
+      return $"_{arrayTypeName}_IndexExtensions";
+    }
+
+    private void WriteArrayIterator(in BlockWriter arrayBlock, CodeGenArray arrayType, bool mutable) {
+      var iteratorType = GetArrayIteratorTypeName(mutable);
+      var enumeratorType = GetArrayEnumeratorTypeName(mutable);
+
+      using (var iterBlock = arrayBlock.Sub($"public unsafe readonly ref struct {iteratorType}")) {
+        iterBlock.WriteLine($"private readonly {arrayType.Name}* _ptr;");
+        var modifier = mutable ? "ref" : "in";
+        using (var ctorBlock = iterBlock.Sub($"public {iteratorType}({modifier} {arrayType.Name} array)")) {
+          ctorBlock.WriteLine($"fixed ({arrayType.Name}* ptr = &array) _ptr = ptr;");
+        }
+
+        iterBlock.WriteLine($"public {enumeratorType} GetEnumerator() => new {enumeratorType}(_ptr);");
       }
     }
 
-    protected virtual void WriteArrayIndexer(BlockWriter typeBlock, string itemType) {
-      using (var idxBlock = typeBlock.Sub($"public ref {itemType} this[int index]"))
-      using (var getBlock = idxBlock.Sub("get")) {
-        getBlock.WriteLine(
-          $"if (index < 0 || sizeof({itemType}) * index >= SizeOf) throw new IndexOutOfRangeException();");
-        getBlock.WriteLine("return ref At(index);");
-      }
-    }
-
-    private static void WriteArrayEnumerator(string arrayType, string item, BlockWriter arrayBlock) {
-      var enumeratorType = $"_EnumeratorOf{arrayType}";
-      arrayBlock.WriteLine($"public {enumeratorType} GetEnumerator() => new {enumeratorType}(ref this);");
-
-      arrayBlock.WriteLine();
+    private void WriteArrayEnumerator(in BlockWriter arrayBlock, CodeGenArray arrayType, bool mutable) {
+      var enumeratorType = GetArrayEnumeratorTypeName(mutable);
       using (var enumeratorBlock = arrayBlock.Sub($"public unsafe ref struct {enumeratorType}")) {
-        enumeratorBlock.WriteLine($"private readonly {arrayType}* _arrayPtr;");
+        enumeratorBlock.WriteLine($"private readonly {arrayType.Name}* _ptr;");
         enumeratorBlock.WriteLine("private int _index;");
-
-        enumeratorBlock.WriteLine();
-        using (var ctorBlock = enumeratorBlock.Sub($"public {enumeratorType}(ref {arrayType} array)")) {
-          ctorBlock.WriteLine($"fixed ({arrayType}* arrayPtr = &array) _arrayPtr = arrayPtr;");
+        using (var ctorBlock = enumeratorBlock.Sub($"public {enumeratorType}({arrayType.Name}* ptr)")) {
+          ctorBlock.WriteLine("_ptr = ptr;");
           ctorBlock.WriteLine("_index = -1;");
         }
 
-        enumeratorBlock.WriteLine();
-        enumeratorBlock.WriteLine("public bool MoveNext() => ++_index < Length;");
-        enumeratorBlock.WriteLine($"public ref {item} Current => ref (*_arrayPtr).At(_index);");
+        var refType = mutable ? "ref" : "ref readonly";
+        var derefExpr = $"*(({arrayType.ItemType}*)_ptr + _index)";
+        enumeratorBlock.WriteLine($"public {refType} {arrayType.ItemType} Current => ref {derefExpr};");
+        enumeratorBlock.WriteLine($"public bool MoveNext() => ++_index < {arrayType.Name}.Length;");
 
-        enumeratorBlock.WriteLine();
         enumeratorBlock.WriteLine("public void Reset() => _index = -1;");
         enumeratorBlock.WriteLine("public void Dispose() {}");
       }
+    }
+
+    private void WriteArrayIndexingExtensions(in BlockWriter nsBlock, CodeGenArray arrayType) {
+      var typeName = GetArrayIndexExtensionsTypeName(arrayType.Name);
+      using (var typeBlock = nsBlock.Sub($"public static unsafe class {typeName}")) {
+        WriteArrayRefIndexerExtensionMethod(typeBlock, arrayType, true);
+        WriteArrayRefIterExtensionMethod(typeBlock, arrayType.Name, true);
+        typeBlock.WriteLine();
+        WriteArrayRefIndexerExtensionMethod(typeBlock, arrayType, false);
+        WriteArrayRefIterExtensionMethod(typeBlock, arrayType.Name, false);
+      }
+    }
+
+    private void WriteArrayRefIndexerExtensionMethod(in BlockWriter typeBlock, CodeGenArray arrayType, bool mutable) {
+      var refType = mutable ? "ref" : "ref readonly";
+      var method = $"{GetRefAcessorPrefix(mutable)}At";
+      var mod = mutable ? "ref" : "in";
+
+      var expr = $"public static {refType} {arrayType.ItemType} {method}(this {mod} {arrayType.Name} array, int index)";
+      using (var methodBlock = typeBlock.Sub(expr)) {
+        WriteBoundsCheck(methodBlock, arrayType);
+        using (var fixedBlock = methodBlock.Sub($"fixed ({arrayType.Name}* ptr = &array)")) {
+          fixedBlock.WriteLine($"return ref *(({arrayType.ItemType}*)ptr + index);");
+        }
+      }
+    }
+
+    protected virtual void WriteBoundsCheck(BlockWriter methodBlock, CodeGenArray arrayType) {
+      var iType = arrayType.ItemType;
+      var aType = arrayType.Name;
+      const string eType = "IndexOutOfRangeException";
+      methodBlock.WriteLine($"if (index < 0 || sizeof({iType}) * index >= {aType}.SizeOf) throw new {eType}();");
+    }
+
+    private void WriteArrayRefIterExtensionMethod(in BlockWriter typeBlock, string arrayType, bool mutable) {
+      var iterType = $"{arrayType}.{GetArrayIteratorTypeName(mutable)}";
+      var method = $"{GetRefAcessorPrefix(mutable)}Iter";
+      var mod = mutable ? "ref" : "in";
+
+      var expr = $"public static {iterType} {method}(this {mod} {arrayType} array) => new {iterType}({mod} array);";
+      typeBlock.WriteLine(expr);
     }
 
     protected virtual void WriteStruct(CodeGenStruct structType, in BlockWriter nsBlock) {
@@ -160,13 +220,8 @@ namespace PlainBuffers.Generators {
         typeBlock.WriteLine("[FieldOffset(0)] private fixed byte _buffer[SizeOf];");
 
         typeBlock.WriteLine();
-        foreach (var field in structType.Fields) {
-          // `bool` is not blittable type, so we need to set format explicitly
-          var isBoolean = field.Type == "bool";
-          var marshalAttribute = isBoolean ? ", MarshalAs(UnmanagedType.U1)" : "";
-
-          typeBlock.WriteLine($"[FieldOffset({field.Offset}){marshalAttribute}] public {field.Type} {field.Name};");
-        }
+        foreach (var field in structType.Fields)
+          WriteField(typeBlock, field.Offset, field.Type, field.Name);
 
         typeBlock.WriteLine();
         using (var wdBlock = typeBlock.Sub("public void WriteDefault()")) {
@@ -183,6 +238,16 @@ namespace PlainBuffers.Generators {
       }
     }
 
+    protected virtual void WriteField(in BlockWriter typeBlock, int offset, string fieldType, string fieldName) {
+      var attributes = $"FieldOffset({offset})";
+
+      // `bool` is not blittable type, so we need to set format explicitly
+      if (fieldType == "bool")
+        attributes += ", MarshalAs(UnmanagedType.U1)";
+
+      typeBlock.WriteLine($"[{attributes}] public {fieldType} {fieldName};");
+    }
+
     protected virtual void WriteEqualityOperators(string type, in BlockWriter typeBlock) {
       using (var eqBlock = typeBlock.Sub($"public static bool operator ==(in {type} l, in {type} r)")) {
         using (var rFxd = eqBlock.Sub("fixed (byte* __l = l._buffer, __r = r._buffer)")) {
@@ -196,14 +261,14 @@ namespace PlainBuffers.Generators {
       typeBlock.WriteLine("public override int GetHashCode() => throw new NotSupportedException();");
     }
 
-    protected virtual void WritePaddingFiller(in BlockWriter writeDefaultBlock)
-    {
+    protected virtual void WritePaddingFiller(in BlockWriter writeDefaultBlock) {
       using (var fxdBlock = writeDefaultBlock.Sub("fixed (byte* __ptr = _buffer)")) {
         fxdBlock.WriteLine("new Span<byte>(__ptr + (SizeOf - _Padding), _Padding).Fill(0);");
       }
     }
 
-    private static void PutWriteDefaultLine(BlockWriter block, string lhs, string type, in DefaultValueInfo valInfo) {
+    protected static void PutWriteDefaultLine(in BlockWriter block, string lhs, string type,
+      in DefaultValueInfo valInfo) {
       switch (valInfo.Variant) {
         case DefaultValueVariant.WriteZeroes:
           block.WriteLine($"{lhs} = default;");
