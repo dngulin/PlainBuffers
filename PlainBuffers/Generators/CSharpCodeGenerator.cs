@@ -93,15 +93,12 @@ namespace PlainBuffers.Generators {
         WriteArrayFields(arrayType, typeBlock);
 
         typeBlock.WriteLine();
-        using (var atBlock = typeBlock.Sub($"private ref {arrayType.ItemType} ItemRef(int index)"))
-        using (var ptrBlock = atBlock.Sub("fixed (byte* ptr = _buffer)")) {
-          ptrBlock.WriteLine($"return ref *(({arrayType.ItemType}*)ptr + index);");
-        }
-
-        typeBlock.WriteLine();
         using (var wdBlock = typeBlock.Sub("public void WriteDefault()"))
-        using (var forBlock = wdBlock.Sub("for (var i = 0; i < Length; i++)")) {
-          PutWriteDefaultLine(forBlock, "ItemRef(i)", arrayType.ItemType, arrayType.ItemDefaultValueInfo);
+        using (var ptrBlock = wdBlock.Sub("fixed (byte* ptr = _buffer)")) {
+          using (var forBlock = ptrBlock.Sub("for (var i = 0; i < Length; i++)")) {
+            var lValue = $"(*(({arrayType.ItemType}*)ptr + i))";
+            PutWriteDefaultLine(forBlock, lValue, arrayType.ItemType, arrayType.ItemDefaultValueInfo);
+          }
         }
 
         typeBlock.WriteLine();
