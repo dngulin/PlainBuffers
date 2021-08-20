@@ -124,9 +124,9 @@ namespace PlainBuffers.Generators {
         WriteField(typeBlock, i * itemSize, arrayType.ItemType, $"Item{i}");
     }
 
-    private static string GetRefAcessorPrefix(bool mutable) => mutable ? "Ref" : "RefReadonly";
-    protected virtual string GetArrayIteratorTypeName(bool mutable) => $"{GetRefAcessorPrefix(mutable)}Iterator";
-    protected virtual string GetArrayEnumeratorTypeName(bool mutable) => $"{GetRefAcessorPrefix(mutable)}Enumerator";
+    protected static string GetRefAccessorPrefix(bool mutable) => mutable ? "Ref" : "RefReadonly";
+    protected virtual string GetArrayIteratorTypeName(bool mutable) => $"{GetRefAccessorPrefix(mutable)}Iterator";
+    protected virtual string GetArrayEnumeratorTypeName(bool mutable) => $"{GetRefAccessorPrefix(mutable)}Enumerator";
 
     protected virtual string GetArrayIndexExtensionsTypeName(string arrayTypeName) {
       return $"_{arrayTypeName}_IndexExtensions";
@@ -180,7 +180,7 @@ namespace PlainBuffers.Generators {
 
     protected virtual void WriteArrayRefIndexerExtensionMethod(in BlockWriter typeBlock, CodeGenArray arrayType, bool mutable) {
       var refType = mutable ? "ref" : "ref readonly";
-      var method = $"{GetRefAcessorPrefix(mutable)}At";
+      var method = $"{GetRefAccessorPrefix(mutable)}At";
       var mod = mutable ? "ref" : "in";
 
       var expr = $"public static {refType} {arrayType.ItemType} {method}(this {mod} {arrayType.Name} array, int index)";
@@ -201,7 +201,7 @@ namespace PlainBuffers.Generators {
 
     private void WriteArrayRefIterExtensionMethod(in BlockWriter typeBlock, string arrayType, bool mutable) {
       var iterType = $"{arrayType}.{GetArrayIteratorTypeName(mutable)}";
-      var method = $"{GetRefAcessorPrefix(mutable)}Iter";
+      var method = $"{GetRefAccessorPrefix(mutable)}Iter";
       var mod = mutable ? "ref" : "in";
 
       var expr = $"public static {iterType} {method}(this {mod} {arrayType} array) => new {iterType}({mod} array);";
