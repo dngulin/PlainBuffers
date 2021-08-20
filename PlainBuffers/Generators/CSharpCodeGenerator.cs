@@ -90,9 +90,7 @@ namespace PlainBuffers.Generators {
         typeBlock.WriteLine("[FieldOffset(0)] private fixed byte _buffer[SizeOf];");
 
         typeBlock.WriteLine();
-        var itemSize = arrayType.Size / arrayType.Length;
-        for (var i = 0; i < arrayType.Length; i++)
-          WriteField(typeBlock, i * itemSize, arrayType.ItemType, $"Item{i}");
+        WriteArrayFields(arrayType, typeBlock);
 
         typeBlock.WriteLine();
         using (var atBlock = typeBlock.Sub($"private ref {arrayType.ItemType} ItemRef(int index)"))
@@ -121,6 +119,12 @@ namespace PlainBuffers.Generators {
 
       nsBlock.WriteLine();
       WriteArrayIndexingExtensions(nsBlock, arrayType);
+    }
+
+    protected virtual void WriteArrayFields(CodeGenArray arrayType, BlockWriter typeBlock) {
+      var itemSize = arrayType.Size / arrayType.Length;
+      for (var i = 0; i < arrayType.Length; i++)
+        WriteField(typeBlock, i * itemSize, arrayType.ItemType, $"Item{i}");
     }
 
     private static string GetRefAcessorPrefix(bool mutable) => mutable ? "Ref" : "RefReadonly";
