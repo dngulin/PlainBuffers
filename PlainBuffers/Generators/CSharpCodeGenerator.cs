@@ -178,7 +178,7 @@ namespace PlainBuffers.Generators {
       }
     }
 
-    private void WriteArrayRefIndexerExtensionMethod(in BlockWriter typeBlock, CodeGenArray arrayType, bool mutable) {
+    protected virtual void WriteArrayRefIndexerExtensionMethod(in BlockWriter typeBlock, CodeGenArray arrayType, bool mutable) {
       var refType = mutable ? "ref" : "ref readonly";
       var method = $"{GetRefAcessorPrefix(mutable)}At";
       var mod = mutable ? "ref" : "in";
