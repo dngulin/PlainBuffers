@@ -41,9 +41,13 @@ namespace PlainBuffers.Generators {
           }
 
           if (i < data.Types.Length - 1)
-            nsBlock.WriteLine();
+            WriteTypeSeparator(nsBlock);
         }
       }
+    }
+
+    protected virtual void WriteTypeSeparator(in BlockWriter nsBlock) {
+      nsBlock.WriteLine();
     }
 
     protected virtual void WriteHeader(TextWriter writer) {
