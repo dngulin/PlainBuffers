@@ -86,6 +86,8 @@ namespace PlainBuffers.Generators {
     protected virtual void WriteArray(CodeGenArray arrayType, in BlockWriter nsBlock) {
       nsBlock.WriteLine("[StructLayout(LayoutKind.Explicit)]");
       using (var typeBlock = nsBlock.Sub($"public unsafe struct {arrayType.Name}")) {
+        StartArrayHook(arrayType, typeBlock);
+
         typeBlock.WriteLine($"public const int SizeOf = {arrayType.Size};");
         typeBlock.WriteLine($"public const int AlignmentOf = {arrayType.Alignment};");
         typeBlock.WriteLine($"public const int Length = {arrayType.Length};");
@@ -108,6 +110,8 @@ namespace PlainBuffers.Generators {
         typeBlock.WriteLine();
         WriteEqualityOperators(arrayType.Name, typeBlock);
 
+        EndArrayHook(arrayType, typeBlock);
+
         typeBlock.WriteLine();
         WriteArrayIterator(typeBlock, arrayType, true);
         typeBlock.WriteLine();
@@ -120,6 +124,12 @@ namespace PlainBuffers.Generators {
 
       nsBlock.WriteLine();
       WriteArrayIndexingExtensions(nsBlock, arrayType);
+    }
+
+    protected virtual void StartArrayHook(CodeGenArray arrayType, BlockWriter typeBlock) {
+    }
+
+    protected virtual void EndArrayHook(CodeGenArray arrayType, BlockWriter typeBlock) {
     }
 
     protected virtual void WriteArrayFields(CodeGenArray arrayType, BlockWriter typeBlock) {
@@ -215,6 +225,8 @@ namespace PlainBuffers.Generators {
     protected virtual void WriteStruct(CodeGenStruct structType, in BlockWriter nsBlock) {
       nsBlock.WriteLine("[StructLayout(LayoutKind.Explicit)]");
       using (var typeBlock = nsBlock.Sub($"public unsafe struct {structType.Name}")) {
+        StartStructHook(structType, typeBlock);
+
         typeBlock.WriteLine($"public const int SizeOf = {structType.Size};");
         typeBlock.WriteLine($"public const int AlignmentOf = {structType.Alignment};");
 
@@ -240,7 +252,15 @@ namespace PlainBuffers.Generators {
 
         typeBlock.WriteLine();
         WriteEqualityOperators(structType.Name, typeBlock);
+
+        EndStructHook(structType, typeBlock);
       }
+    }
+
+    protected virtual void StartStructHook(CodeGenStruct structType, BlockWriter typeBlock) {
+    }
+
+    protected virtual void EndStructHook(CodeGenStruct structType, BlockWriter typeBlock) {
     }
 
     protected virtual void WriteField(in BlockWriter typeBlock, int offset, string fieldType, string fieldName) {
