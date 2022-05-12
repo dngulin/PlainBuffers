@@ -17,7 +17,7 @@ There aren't weird `Mutate`-methods, but there are usual struct fields. But it i
 For example, see a sample [schema](PlainBuffers.Tests/Generated/Schema.pbs)
 and related [generated code](PlainBuffers.Tests/Generated/Schema.cs).
 
-Currently project is at an early development stage and supports code generation for the C# language only.
+Currently project supports code generation only for the C# language.
 
 ## Schema Syntax
 
@@ -25,26 +25,46 @@ The syntax of the schema language is described below.
 
 ```
 // This is a commentary
-namespace @name.dot.separated {
-    enum @name : @underlyingType *flags { // The flags modifier is oprtional
-        @name = @value;
-        @name = @value;
+
+// Only one namespace should be defined in schema
+namespace Name.Dot.Separtated {
+
+    // Base enum type should be defined explicitly
+    enum SampleEnum : byte {
+        Foo = 1; // All enum values should be annotated by numbers
+        Bar = 2;
     }
     
-    struct @name {
-        @type @name;
-        @type @name = @default; // Default values are allowed only for primitive types
+    // Flag enums are generated with an optional `flags` modifier
+    enum SampleFlags : ushort flags {
+        A = 1;
+        B = 2;
+        C = 4;
     }
     
-    array @name @itemType[@length] = @default; // Array items can have default values too
+    // Struct definition example
+    struct SampleStruct {
+        bool FieldA;
+        int FieldB = 42; // Defult value is written by the `WriteDefault` method
+        SampleEnum FiledC = Foo; // Enums also support default values
+        SampleEnum FiledD = Bar;
+    }
+    
+    // Array definition example
+    // It will generate struct with all the data stored inplace
+    array SampleArray SampleStruct[10];
+    
+    // Array items can have default values too
+    array IndicesArray int[32] = -1; // Array items can have deafult value
+    
+    // Complex truct example
+    struct ComplexStruct {
+        SampleStruct FiledA; // Any type declared above can be used as filed type
+        SampleArray FiledB;
+        IndicesArray FiledC;
+    }
 }
 ```
-
-- Commentary is started from `//`
-- Identifiers started form `@` should be defined by user.
-- Identifiers started from `*` are optional (currently it is only `flags` modifier for enum types).
-
-Only one namespace should be defined in schema.
 
 You can use primitive types for struct fields, array item types and as underlying types of enum (integers only).
 All primitive types are [named same](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types) 
