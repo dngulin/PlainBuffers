@@ -27,7 +27,7 @@ The syntax of the schema language is described below.
 // This is a commentary
 
 // Only one namespace should be defined in schema
-namespace Name.Dot.Separtated {
+namespace Name.Dot.Separated {
 
     // Base enum type should be defined explicitly
     enum SampleEnum : byte {
