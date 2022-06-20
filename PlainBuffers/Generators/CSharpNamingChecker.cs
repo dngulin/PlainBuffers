@@ -32,10 +32,10 @@ namespace PlainBuffers.Generators {
             CheckEnum(enumGenInfo, index);
             break;
           case CodeGenArray arrayGenInfo:
-            ChekArray(arrayGenInfo, index);
+            CheckArray(arrayGenInfo, index);
             break;
           case CodeGenStruct structGenInfo:
-            ChekStruct(structGenInfo, index);
+            CheckStruct(structGenInfo, index);
             break;
           default:
             throw new Exception("Unknown data type");
@@ -65,12 +65,12 @@ namespace PlainBuffers.Generators {
       index.Enums.Add(enumInfo.Name);
     }
 
-    private static void ChekArray(CodeGenArray arrayInfo, CheckingIndex index) {
+    private static void CheckArray(CodeGenArray arrayInfo, CheckingIndex index) {
       if (arrayInfo.ItemType == "Length")
         index.Errors.Add($"Type with name `{arrayInfo.ItemType}` can't be stored in an array");
     }
 
-    private static void ChekStruct(CodeGenStruct structInfo, CheckingIndex index) {
+    private static void CheckStruct(CodeGenStruct structInfo, CheckingIndex index) {
       foreach (var field in structInfo.Fields) {
         if (Keywords.Contains(structInfo.Name))
           index.Errors.Add($"Field `{structInfo.Name}.{field.Name}` has the same name with a C# keyword");
