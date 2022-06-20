@@ -87,7 +87,7 @@ ensure that lifetimes of them are shorter then the array lifetime.
 Since the 2.0.0 version, array indexers were removed because they can produce defensive copies when the array accessed by readonly reference.
 Instead of them you should use `RefAt` and `RefReadonlyAt` extension methods depending on access type.
 To get iterators you should use extension methods `RefIter` and `RefReadonlyIter`.
-See usage examples in [tests](PlainBuffers.Tests/GeneratedCodeTests.cs).
+See usage examples in [tests](PlainBuffers.Tests/GeneratedCodeTests.cs#L43).
 
 ## Unity Integration
 
