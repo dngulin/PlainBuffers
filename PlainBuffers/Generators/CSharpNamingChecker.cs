@@ -8,7 +8,6 @@ namespace PlainBuffers.Generators {
     private class CheckingIndex {
       public readonly List<string> Errors = new List<string>();
       public readonly List<string> Warnings = new List<string>();
-      public readonly HashSet<string> Enums = new HashSet<string>();
     }
 
     private static readonly HashSet<string> Keywords = new HashSet<string> {
@@ -61,8 +60,6 @@ namespace PlainBuffers.Generators {
         if (Keywords.Contains(item.Name))
           index.Errors.Add($"Enum item `{enumInfo.Name}.{item.Name}` has the same name with a C# keyword");
       }
-
-      index.Enums.Add(enumInfo.Name);
     }
 
     private static void CheckArray(CodeGenArray arrayInfo, CheckingIndex index) {
@@ -80,7 +77,7 @@ namespace PlainBuffers.Generators {
 
         if (field.Name.StartsWith("_"))
           index.Warnings.Add($"Field name `{structInfo.Name}.{field.Name}` starts with `_`. " +
-                             $"It can cause name clashes in a generated code");
+                             "It can cause name clashes in a generated code");
       }
     }
   }
