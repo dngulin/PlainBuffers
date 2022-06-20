@@ -19,9 +19,9 @@ and related [generated code](PlainBuffers.Tests/Generated/Schema.cs).
 
 Currently project supports code generation only for the C# language.
 
-## Schema Syntax
+## Schema Example
 
-The syntax of the schema language is described below.
+The example of the schema language is listed below.
 
 ```
 // This is a commentary
@@ -39,15 +39,21 @@ namespace Name.Dot.Separated {
     enum SampleFlags : ushort flags {
         A = 1;
         B = 2;
+        AB = 3;
         C = 4;
     }
     
     // Struct definition example
+    // To set default values you should to call a `WriteDefault` method
     struct SampleStruct {
-        bool FieldA;
-        int FieldB = 42; // Defult value is written by the `WriteDefault` method
+        bool FieldA = true;
+        int FieldB = 42;
         SampleEnum FiledC = Foo; // Enums also support default values
-        SampleEnum FiledD = Bar;
+        
+        // If default value is not defined for enum field,
+        // the first enum variant will be used in the `WriteDefault` method.
+        // So, this defeinition equals to the `SampleFlags FiledD = A`
+        SampleFlags FiledD;
     }
     
     // Array definition example
@@ -55,13 +61,14 @@ namespace Name.Dot.Separated {
     array SampleArray SampleStruct[10];
     
     // Array items can have default values too
-    array IndicesArray int[32] = -1; // Array items can have deafult value
+    array IndicesArray int[32] = -1;
     
     // Complex truct example
+    // Any type declared above can be referenced
     struct ComplexStruct {
-        SampleStruct FiledA; // Any type declared above can be used as filed type
-        SampleArray FiledB;
-        IndicesArray FiledC;
+        SampleStruct FieldA;
+        SampleArray FieldB;
+        IndicesArray FieldC;
     }
 }
 ```
