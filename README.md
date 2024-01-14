@@ -91,10 +91,7 @@ See usage examples in [tests](PlainBuffers.Tests/GeneratedCodeTests.cs#L43).
 
 ## Unity Integration
 
-PlainBuffers library provides the `CSharpUnityCodeGenerator` class that uses `UnsafeUtility` instead of `Span<T>` and generates code without any external dependencies. 
-
-Compiler library itself are targeted to NetStandard 2.0 and dependent on the `System.Memory` library.
-It can be downloaded from [nuget.org](https://www.nuget.org/packages/System.Memory/) and integrated into unity project.
+PlainBuffers library provides the `CSharpUnityCodeGenerator` class that uses `UnsafeUtility` instead of `Span<T>`.
 
 ## TODO
 
