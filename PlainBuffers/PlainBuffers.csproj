@@ -3,11 +3,11 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <PackageVersion>2.4.0</PackageVersion>
+        <PackageVersion>3.0.0</PackageVersion>
         <Authors>Danul Gulin</Authors>
         <Description>Serialization library written in C# for .NET Standard 2.1</Description>
         <RepositoryUrl>https://github.com/dngulin/PlainBuffers</RepositoryUrl>
-        <AssemblyVersion>2.4.0</AssemblyVersion>
+        <AssemblyVersion>3.0.0</AssemblyVersion>
         <LangVersion>default</LangVersion>
     </PropertyGroup>
 
