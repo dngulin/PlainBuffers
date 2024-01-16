@@ -240,14 +240,16 @@ namespace PlainBuffers.Generators {
         foreach (var field in structType.Fields)
           WriteField(typeBlock, field.Offset, field.Type, field.Name);
 
-        typeBlock.WriteLine();
-        using (var wdBlock = typeBlock.Sub("public void WriteDefault()")) {
-          foreach (var field in structType.Fields) {
-            PutWriteDefaultLine(wdBlock, field.Name, field.Type, field.DefaultValueInfo);
-          }
+        if (!structType.IsUnion) {
+          typeBlock.WriteLine();
+          using (var wdBlock = typeBlock.Sub("public void WriteDefault()")) {
+            foreach (var field in structType.Fields) {
+              PutWriteDefaultLine(wdBlock, field.Name, field.Type, field.DefaultValueInfo);
+            }
 
-          if (structType.Padding != 0)
-            WritePaddingFiller(wdBlock);
+            if (structType.Padding != 0)
+              WritePaddingFiller(wdBlock);
+          }
         }
 
         typeBlock.WriteLine();

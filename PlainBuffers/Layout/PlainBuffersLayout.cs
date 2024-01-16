@@ -123,10 +123,10 @@ namespace PlainBuffers.Layout {
       var padding = reminder == 0 ? 0 : alignment - reminder;
       var size = unalignedSize + padding;
 
-      var structMemInfo = new TypeMemoryInfo(size, alignment, DefaultValueInfo.CallWriteDefaultMethod());
+      var structMemInfo = new TypeMemoryInfo(size, alignment, DefaultValueInfo.WriteZeroes());
       typesMemInfo.Add(pdStruct.Name, structMemInfo);
 
-      return new CodeGenStruct(pdStruct.Name, size, alignment, padding, fields);
+      return new CodeGenStruct(pdStruct.Name, size, alignment, padding, fields, true);
     }
 
     private static CodeGenStruct HandleRegularStruct(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
@@ -154,7 +154,7 @@ namespace PlainBuffers.Layout {
       var structMemInfo = new TypeMemoryInfo(size, alignment, DefaultValueInfo.CallWriteDefaultMethod());
       typesMemInfo.Add(pdStruct.Name, structMemInfo);
 
-      return new CodeGenStruct(pdStruct.Name, size, alignment, padding, fields);
+      return new CodeGenStruct(pdStruct.Name, size, alignment, padding, fields, false);
     }
 
     private static FieldMemoryInfo[] GetFieldsMemoryInfo(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
