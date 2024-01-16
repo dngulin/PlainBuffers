@@ -97,8 +97,39 @@ namespace PlainBuffers.Layout {
 
     private static CodeGenStruct HandleStruct(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
       if (pdStruct.Fields.Length == 0)
-        throw new Exception($"Struct `{pdStruct.Name}` is zero-sized");
+        throw new Exception($"Struct/union `{pdStruct.Name}` is zero-sized");
 
+      return pdStruct.IsUnion ?
+        HandleUnionStruct(pdStruct, typesMemInfo) :
+        HandleRegularStruct(pdStruct, typesMemInfo);
+    }
+
+    private static CodeGenStruct HandleUnionStruct(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
+      var fieldsMemInfo = GetFieldsMemoryInfo(pdStruct, typesMemInfo);
+
+      var fields = new CodeGenField[pdStruct.Fields.Length];
+      for (var i = 0; i < fields.Length; i++) {
+        var (pdFieldIndex, memInfo) = fieldsMemInfo[i];
+        var pdField = pdStruct.Fields[pdFieldIndex];
+
+        var defaultValue = memInfo.DefaultValueInfo.WithCustomDefaultValueIfPossible(pdField.DefaultValue);
+        fields[i] = new CodeGenField(pdField.Type, pdField.Name, defaultValue, 0);
+      }
+
+      var unalignedSize = fieldsMemInfo.Max(fmi => fmi.TypeMemoryInfo.Size);
+      var alignment = fieldsMemInfo.Max(fmi => fmi.TypeMemoryInfo.Alignment);
+
+      var reminder = unalignedSize % alignment;
+      var padding = reminder == 0 ? 0 : alignment - reminder;
+      var size = unalignedSize + padding;
+
+      var structMemInfo = new TypeMemoryInfo(size, alignment, DefaultValueInfo.CallWriteDefaultMethod());
+      typesMemInfo.Add(pdStruct.Name, structMemInfo);
+
+      return new CodeGenStruct(pdStruct.Name, size, alignment, padding, fields);
+    }
+
+    private static CodeGenStruct HandleRegularStruct(ParsedStruct pdStruct, IDictionary<string, TypeMemoryInfo> typesMemInfo) {
       var fieldsMemInfo = GetFieldsMemoryInfo(pdStruct, typesMemInfo);
 
       var offset = 0;
@@ -120,8 +151,8 @@ namespace PlainBuffers.Layout {
       var padding = reminder == 0 ? 0 : alignment - reminder;
       var size = unalignedSize + padding;
 
-      var structDefaultValue = DefaultValueInfo.CallWriteDefaultMethod();
-      typesMemInfo.Add(pdStruct.Name, new TypeMemoryInfo(size, alignment, structDefaultValue));
+      var structMemInfo = new TypeMemoryInfo(size, alignment, DefaultValueInfo.CallWriteDefaultMethod());
+      typesMemInfo.Add(pdStruct.Name, structMemInfo);
 
       return new CodeGenStruct(pdStruct.Name, size, alignment, padding, fields);
     }
@@ -132,7 +163,7 @@ namespace PlainBuffers.Layout {
       for (var i = 0; i < fieldsMemInfo.Length; i++) {
         var pdField = pdStruct.Fields[i];
         if (!typesMemInfo.TryGetValue(pdField.Type, out var memInfo))
-          throw new Exception($"Unknown field type `{pdField.Type}` defined in the struct `{pdStruct.Name}`");
+          throw new Exception($"Unknown field type `{pdField.Type}` defined in the struct/union `{pdStruct.Name}`");
 
         fieldsMemInfo[i] = new FieldMemoryInfo(i, memInfo);
       }

@@ -32,4 +32,9 @@ namespace PlainBuffers.Tests.Generated {
   }
 
   array Monsters Monster[5];
+
+  union VecQuat {
+    Vec Vec;
+    Quat Quat;
+  }
 }

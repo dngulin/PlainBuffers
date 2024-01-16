@@ -70,6 +70,15 @@ namespace Name.Dot.Separated {
         SampleArray FieldB;
         IndicesArray FieldC;
     }
+    
+    // Union example
+    // All fields have a zero offset
+    // Union size is big enough to fit the biggest field with a proper alignment
+    union UnionStruct {
+        SampleStruct FieldA;
+        SampleArray FieldB;
+        IndicesArray FieldC;
+    }
 }
 ```
 

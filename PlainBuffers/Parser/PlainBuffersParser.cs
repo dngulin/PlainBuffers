@@ -12,6 +12,7 @@ namespace PlainBuffers.Parser {
     private const string EnumId = "enum";
     private const string ArrayId = "array";
     private const string StructId = "struct";
+    private const string UnionId = "union";
 
     private const string FlagsId = "flags";
 
@@ -96,7 +97,9 @@ namespace PlainBuffers.Parser {
         case ArrayId:
           return TryParseArray(state, data, index);
         case StructId:
-          return TryParseStruct(state, data, index);
+          return TryParseStruct(state, data, index, false);
+        case UnionId:
+          return TryParseStruct(state, data, index, true);
       }
 
       return OpResult.Fail($"Unknown datatype `{id}` declaration at {p}");
@@ -233,9 +236,9 @@ namespace PlainBuffers.Parser {
       return OpResult.Ok();
     }
 
-    private OpResult TryParseStruct(ParserState state, LexerData data, ParsingIndex index) {
+    private OpResult TryParseStruct(ParserState state, LexerData data, ParsingIndex index, bool isUnion) {
       if (!TryReadToken(data, TokenType.Identifier, out var namePos, out var structName))
-        return OpResult.Fail($"Struct name is not defined at {namePos}");
+        return OpResult.Fail($"Struct/union name is not defined at {namePos}");
 
       if (_mapper != null)
         structName = _mapper.RemapTypeName(TypeKind.Struct, structName, state.RemappedTypes);
@@ -245,10 +248,10 @@ namespace PlainBuffers.Parser {
         return validationResult;
 
       if (!TryReadToken(data, TokenType.CurlyBraceLeft, out var bracePos, out _))
-        return OpResult.Fail($"Missing `{{` after struct `{structName}` declaration at {bracePos}");
+        return OpResult.Fail($"Missing `{{` after struct/union `{structName}` declaration at {bracePos}");
 
       state.StartBlock(ParsingBlockType.Struct, structName);
-      index.BeginStruct(structName);
+      index.BeginStruct(structName, isUnion);
 
       return OpResult.Ok();
     }
@@ -262,7 +265,7 @@ namespace PlainBuffers.Parser {
 
         return index.IsStructNonEmpty(structName) ?
           OpResult.Ok() :
-          OpResult.Fail($"Struct `{structName}` is zero-sized");
+          OpResult.Fail($"Struct/union `{structName}` is zero-sized");
       }
 
       if (!TryReadToken(data, TokenType.Identifier, out var typePos, out var fieldType))

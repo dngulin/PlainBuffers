@@ -13,6 +13,7 @@ namespace PlainBuffers.Parser {
     private readonly Dictionary<string, List<ParsedEnumItem>> _enumItems;
 
     private readonly Dictionary<string, List<ParsedField>> _structFields;
+    private readonly HashSet<string> _unions;
 
     private readonly Dictionary<string, ParsedArray> _arrays;
 
@@ -26,6 +27,7 @@ namespace PlainBuffers.Parser {
       _arrays = new Dictionary<string, ParsedArray>();
 
       _structFields = new Dictionary<string, List<ParsedField>>();
+      _unions = new HashSet<string>();
     }
 
     public void SetNamespace(string ns) => _namespace = ns;
@@ -55,9 +57,12 @@ namespace PlainBuffers.Parser {
       _completedTypes.Add(name);
     }
 
-    public void BeginStruct(string name) {
+    public void BeginStruct(string name, bool isUnion) {
       _typesOrder.Add((TypeKind.Struct, name));
       _structFields.Add(name, new List<ParsedField>());
+
+      if (isUnion)
+        _unions.Add(name);
     }
 
     public void PutStructField(string structName, string fieldType, string fieldName, string fieldValue) {
@@ -113,7 +118,7 @@ namespace PlainBuffers.Parser {
             break;
 
           case TypeKind.Struct:
-            types[i] = new ParsedStruct(typeName, _structFields[typeName].ToArray());
+            types[i] = new ParsedStruct(typeName, _structFields[typeName].ToArray(), _unions.Contains(typeName));
             break;
 
           default:
