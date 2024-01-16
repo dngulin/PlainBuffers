@@ -1,11 +1,11 @@
 using System;
 
 namespace PlainBuffers {
-  public class ExternStructInfo {
+  public class ExternTypeInfo {
     internal enum StructKind {
       WithoutValues,
       WithEnumeratedValues,
-      PlainBuffersStruct
+      WithWriteDefaultMethod
     }
 
     internal readonly StructKind Kind;
@@ -14,7 +14,7 @@ namespace PlainBuffers {
     public readonly int Alignment;
     public readonly string[] Values;
 
-    private ExternStructInfo(StructKind kind, string name, int size, int alignment, string[] values) {
+    private ExternTypeInfo(StructKind kind, string name, int size, int alignment, string[] values) {
       if (string.IsNullOrEmpty(name))
         throw new ArgumentException("Name is not defined for the extern struct");
 
@@ -34,22 +34,22 @@ namespace PlainBuffers {
       Values = values;
     }
 
-    public static ExternStructInfo WithoutValues(string name, int size, int alignment)
+    public static ExternTypeInfo WithoutValues(string name, int size, int alignment)
     {
-      return new ExternStructInfo(StructKind.WithoutValues, name, size, alignment, Array.Empty<string>());
+      return new ExternTypeInfo(StructKind.WithoutValues, name, size, alignment, Array.Empty<string>());
     }
 
-    public static ExternStructInfo WithEnumeratedValues(string name, int size, int alignment, string[] values)
+    public static ExternTypeInfo WithEnumeratedValues(string name, int size, int alignment, string[] values)
     {
       if (values == null || values.Length <= 0)
         throw new ArgumentException();
 
-      return new ExternStructInfo(StructKind.WithEnumeratedValues, name, size, alignment, values);
+      return new ExternTypeInfo(StructKind.WithEnumeratedValues, name, size, alignment, values);
     }
 
-    public static ExternStructInfo PlainBuffersStruct(string name, int size, int alignment)
+    public static ExternTypeInfo WithWriteDefaultMethod(string name, int size, int alignment)
     {
-      return new ExternStructInfo(StructKind.PlainBuffersStruct, name, size, alignment, Array.Empty<string>());
+      return new ExternTypeInfo(StructKind.WithWriteDefaultMethod, name, size, alignment, Array.Empty<string>());
     }
   }
 }

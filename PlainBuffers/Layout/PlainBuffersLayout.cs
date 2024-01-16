@@ -21,26 +21,16 @@ namespace PlainBuffers.Layout {
       {"double", new TypeMemoryInfo(8, "0")}
     };
 
-    public static CodeGenData Calculate(ParsedData parsedData, ExternStructInfo[] externStructs) {
+    public static CodeGenData Calculate(ParsedData parsedData, ExternTypeInfo[] externTypes) {
       var typesMemInfo = new Dictionary<string, TypeMemoryInfo>(Primitives);
-      foreach (var structInfo in externStructs)
-      {
-        DefaultValueInfo dvi;
-        switch (structInfo.Kind)
-        {
-          case ExternStructInfo.StructKind.WithoutValues:
-            dvi = DefaultValueInfo.WriteZeroes();
-            break;
-          case ExternStructInfo.StructKind.WithEnumeratedValues:
-            dvi = DefaultValueInfo.AssignTypeMember(structInfo.Values[0]);
-            break;
-          case ExternStructInfo.StructKind.PlainBuffersStruct:
-            dvi = DefaultValueInfo.CallWriteDefaultMethod();
-            break;
-          default:
-            throw new ArgumentOutOfRangeException();
-        }
-        typesMemInfo.Add(structInfo.Name, new TypeMemoryInfo(structInfo.Size, structInfo.Alignment, dvi));
+      foreach (var typeInfo in externTypes) {
+        var defValInfo = typeInfo.Kind switch {
+          ExternTypeInfo.StructKind.WithoutValues => DefaultValueInfo.WriteZeroes(),
+          ExternTypeInfo.StructKind.WithEnumeratedValues => DefaultValueInfo.AssignTypeMember(typeInfo.Values[0]),
+          ExternTypeInfo.StructKind.WithWriteDefaultMethod => DefaultValueInfo.CallWriteDefaultMethod(),
+          _ => throw new ArgumentOutOfRangeException()
+        };
+        typesMemInfo.Add(typeInfo.Name, new TypeMemoryInfo(typeInfo.Size, typeInfo.Alignment, defValInfo));
       }
 
       var codeGenTypes = new CodeGenType[parsedData.Types.Length];

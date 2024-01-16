@@ -17,11 +17,11 @@ namespace PlainBuffers.Parser {
     private const string FlagsId = "flags";
 
     private readonly ITypeMapper _mapper;
-    private readonly Dictionary<string, ExternStructInfo> _externStructs;
+    private readonly Dictionary<string, ExternTypeInfo> _externTypes;
 
-    public PlainBuffersParser(ExternStructInfo[] externStructs, ITypeMapper mapper) {
+    public PlainBuffersParser(ExternTypeInfo[] externTypes, ITypeMapper mapper) {
       _mapper = mapper;
-      _externStructs = externStructs.ToDictionary(s => s.Name);
+      _externTypes = externTypes.ToDictionary(s => s.Name);
     }
 
     public ParsingResult Parse(LexerData data) {
@@ -330,7 +330,7 @@ namespace PlainBuffers.Parser {
       if (ParsingHelper.Primitives.Contains(type))
         return OpResult.Fail($"Try to redefine built-in type `{type}` at {pos}");
 
-      if (_externStructs.ContainsKey(type))
+      if (_externTypes.ContainsKey(type))
         return OpResult.Fail($"Try to redefine extern struct `{type}` at {pos}");
 
       if (index.ContainsCompletedType(type))
@@ -341,7 +341,7 @@ namespace PlainBuffers.Parser {
 
     private bool IsTypeKnown(string itemType, ParsingIndex index) {
       return ParsingHelper.Primitives.Contains(itemType) ||
-             _externStructs.ContainsKey(itemType) ||
+             _externTypes.ContainsKey(itemType) ||
              index.ContainsCompletedType(itemType);
     }
 
@@ -349,7 +349,7 @@ namespace PlainBuffers.Parser {
       if (ParsingHelper.IsPrimitive(itemType))
         return ParsingHelper.IsPrimitiveValueValid(itemType, value);
 
-      if (_externStructs.TryGetValue(itemType, out var externStructInfo))
+      if (_externTypes.TryGetValue(itemType, out var externStructInfo))
         return externStructInfo.Values.Contains(value);
 
       if (index.ContainsEnum(itemType))

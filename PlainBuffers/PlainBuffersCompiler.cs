@@ -7,17 +7,17 @@ using PlainBuffers.Parser;
 
 namespace PlainBuffers {
   public class PlainBuffersCompiler {
-    private readonly ExternStructInfo[] _externStructs;
+    private readonly ExternTypeInfo[] _externTypes;
 
     private readonly PlainBuffersLexer _lexer;
     private readonly PlainBuffersParser _parser;
     private readonly IGenerator _generator;
 
-    public PlainBuffersCompiler(IGenerator generator, ExternStructInfo[] externStructs = null, ITypeMapper mapper = null) {
-      _externStructs = externStructs ?? Array.Empty<ExternStructInfo>();
+    public PlainBuffersCompiler(IGenerator generator, ExternTypeInfo[] externTypes = null, ITypeMapper mapper = null) {
+      _externTypes = externTypes ?? Array.Empty<ExternTypeInfo>();
 
       _lexer = new PlainBuffersLexer();
-      _parser = new PlainBuffersParser(_externStructs, mapper);
+      _parser = new PlainBuffersParser(_externTypes, mapper);
       _generator = generator;
     }
 
@@ -38,7 +38,7 @@ namespace PlainBuffers {
         return (new[] {parserError}, Array.Empty<string>());
 
       var parsedData = parserResult.Unwrap();
-      var codeGenData = PlainBuffersLayout.Calculate(parsedData, _externStructs);
+      var codeGenData = PlainBuffersLayout.Calculate(parsedData, _externTypes);
 
       var (errors, warnings) = _generator.NamingChecker.CheckNaming(codeGenData);
       if (errors.Length > 0)
